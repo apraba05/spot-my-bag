@@ -1419,7 +1419,7 @@
 
   .cam-progress {
     position: absolute;
-    bottom: calc(env(safe-area-inset-bottom) + 130px);
+    bottom: calc(env(safe-area-inset-bottom) + 150px);
     left: 50%;
     transform: translateX(-50%);
     display: flex;
@@ -1450,7 +1450,7 @@
 
   .cam-strip {
     position: absolute;
-    bottom: calc(env(safe-area-inset-bottom) + 130px);
+    bottom: calc(env(safe-area-inset-bottom) + 150px);
     left: 0; right: 0;
     display: flex;
     gap: 6px;
@@ -1478,23 +1478,43 @@
   }
 
   .cam-text-btn {
-    background: none;
-    border: none;
+    background: rgba(0,0,0,0.5);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.18);
     color: white;
     font-family: var(--font-mono);
     font-size: 11px;
-    font-weight: 600;
+    font-weight: 700;
     letter-spacing: 0.7px;
     text-transform: uppercase;
     cursor: pointer;
-    padding: 10px;
+    padding: 10px 14px;
     text-align: center;
-    opacity: 0.85;
+    border-radius: 999px;
+    white-space: nowrap;
+    min-width: 76px;
   }
   .cam-text-btn:active { transform: scale(0.95); }
   .cam-text-btn[hidden] { display: none; }
-  .cam-text-btn.left { text-align: left; }
-  .cam-text-btn.right { text-align: right; color: var(--coral); opacity: 1; }
+  .cam-text-btn.left { justify-self: start; }
+  .cam-text-btn.right { justify-self: end; }
+  .cam-text-btn.disabled {
+    opacity: 0.45;
+    pointer-events: none;
+    background: rgba(0,0,0,0.4);
+    border-color: rgba(255,255,255,0.1);
+  }
+  .cam-text-btn.ready {
+    background: var(--coral);
+    color: #ffffff;
+    border-color: var(--coral);
+    box-shadow: 0 6px 18px -4px var(--coral-glow);
+    animation: doneGlow 2.4s ease-in-out infinite;
+  }
+  @keyframes doneGlow {
+    0%, 100% { box-shadow: 0 6px 18px -4px var(--coral-glow); }
+    50%      { box-shadow: 0 8px 26px -2px rgba(245,75,42,0.55); }
+  }
 
   .cam-shutter {
     width: 76px; height: 76px;
@@ -2375,7 +2395,24 @@
   };
 
   const updateDoneVisibility = () => {
-    camEls.done().hidden = state.bag.length < SCAN_MIN;
+    const btn = camEls.done();
+    if (camMode !== "scan") { btn.hidden = true; return; }
+    btn.hidden = false;
+    const count = state.bag.length;
+    if (count === 0) {
+      // No captures yet — hide so the live UI is uncluttered
+      btn.hidden = true;
+      return;
+    }
+    if (count >= SCAN_MIN) {
+      btn.classList.remove("disabled");
+      btn.classList.add("ready");
+      btn.textContent = `Done · ${count}`;
+    } else {
+      btn.classList.add("disabled");
+      btn.classList.remove("ready");
+      btn.textContent = `Done · ${count}/${SCAN_MIN}`;
+    }
   };
 
   camEls.shutter().addEventListener("click", async () => {
