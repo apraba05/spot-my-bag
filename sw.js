@@ -1,6 +1,6 @@
 // SpotMyBag service worker — caches the app shell for offline launch.
 // Bump CACHE on every release to evict stale assets.
-const CACHE = "spotmybag-v5";
+const CACHE = "spotmybag-v6";
 const SHELL = [
   "./",
   "./index.html",

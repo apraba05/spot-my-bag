@@ -832,8 +832,13 @@
     color: var(--teal-deep);
   }
 
-  /* Annotated pile image with targeting reticle */
+  /* ===== Annotated pile image with spotlight ===== */
   .annotated {
+    --cx: 50%;
+    --cy: 50%;
+    --rx: 12%;
+    --ry: 18%;
+    --acc: var(--teal);
     position: relative;
     border-radius: 12px;
     overflow: hidden;
@@ -843,54 +848,185 @@
   .annotated img {
     width: 100%; height: 100%; object-fit: cover; display: block;
   }
-  .annotated .reticle {
-    position: absolute;
-    inset: 0;
+  .spotlight-mask {
+    position: absolute; inset: 0;
+    background: rgba(11,17,32,0.62);
+    -webkit-mask: radial-gradient(ellipse var(--rx) var(--ry) at var(--cx) var(--cy),
+                  transparent 50%, rgba(0,0,0,0.4) 75%, black 100%);
+            mask: radial-gradient(ellipse var(--rx) var(--ry) at var(--cx) var(--cy),
+                  transparent 50%, rgba(0,0,0,0.4) 75%, black 100%);
     pointer-events: none;
   }
-  .reticle-rect {
-    fill: none;
-    stroke: var(--teal);
-    stroke-width: 2;
-    filter: drop-shadow(0 0 6px var(--teal));
-  }
-  .reticle-corner { stroke: var(--teal); stroke-width: 2.5; fill: none; filter: drop-shadow(0 0 4px var(--teal)); }
-  .reticle-pulse {
-    fill: rgba(63,255,162,0.2);
-    animation: reticlePulse 2s ease-in-out infinite;
-  }
-  @keyframes reticlePulse {
-    0%, 100% { opacity: 0.2; }
-    50%      { opacity: 0.55; }
-  }
-  .reticle-label {
+  .spotlight-ring {
     position: absolute;
-    background: rgba(63,255,162,0.95);
-    color: #06311b;
-    padding: 3px 7px;
-    border-radius: 4px;
+    left: var(--cx);
+    top: var(--cy);
+    width: calc(var(--rx) * 2);
+    height: calc(var(--ry) * 2);
+    border-radius: 50%;
+    border: 2px solid var(--acc);
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    box-shadow:
+      0 0 24px var(--acc),
+      inset 0 0 16px color-mix(in srgb, var(--acc) 25%, transparent);
+    animation: ringPulse 2s ease-in-out infinite;
+  }
+  .spotlight-ring-outer {
+    position: absolute;
+    left: var(--cx);
+    top: var(--cy);
+    width: calc(var(--rx) * 2.4);
+    height: calc(var(--ry) * 2.4);
+    border-radius: 50%;
+    border: 1px dashed var(--acc);
+    opacity: 0.55;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    animation: ringRotate 18s linear infinite;
+    transform-origin: center center;
+  }
+  @keyframes ringPulse {
+    0%, 100% { box-shadow: 0 0 16px var(--acc), inset 0 0 10px color-mix(in srgb, var(--acc) 20%, transparent); border-width: 2px; }
+    50%      { box-shadow: 0 0 32px var(--acc), inset 0 0 22px color-mix(in srgb, var(--acc) 35%, transparent); border-width: 3px; }
+  }
+  @keyframes ringRotate {
+    from { transform: translate(-50%, -50%) rotate(0deg); }
+    to   { transform: translate(-50%, -50%) rotate(360deg); }
+  }
+  .annotated.high   { --acc: #3fffa2; }
+  .annotated.medium { --acc: #fbbf24; }
+  .annotated.low    { --acc: #fb923c; }
+
+  .annotated-label {
+    position: absolute;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 11px 6px 9px;
+    border-radius: 999px;
     font-family: var(--font-mono);
-    font-size: 9.5px;
+    font-size: 11px;
     font-weight: 700;
-    letter-spacing: 0.7px;
+    letter-spacing: 0.8px;
     text-transform: uppercase;
-    transform: translateY(-100%);
+    box-shadow: 0 6px 18px -4px rgba(0,0,0,0.5);
+    border: 1.5px solid;
+    z-index: 3;
+    transition: opacity 0.2s;
+    white-space: nowrap;
   }
-  .annotated.no-bbox .reticle, .annotated.no-bbox .reticle-label { display: none; }
-  .annotated.no-bbox::after {
-    content: "NO LOCATION ESTIMATE";
+  .annotated-label .arrow {
+    width: 12px; height: 12px;
+    display: grid; place-items: center;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.25);
+  }
+  .annotated-label .arrow svg { width: 8px; height: 8px; }
+  .annotated.high   .annotated-label { background: #3fffa2; color: #06311b; border-color: #06311b; }
+  .annotated.medium .annotated-label { background: #fbbf24; color: #2a1c00; border-color: #2a1c00; }
+  .annotated.low    .annotated-label { background: #fb923c; color: #2a1100; border-color: #2a1100; }
+  .annotated-label::after {
+    content: "";
     position: absolute;
-    bottom: 8px; left: 50%;
+    width: 1.5px;
+    background: currentColor;
+    opacity: 0.5;
+    left: 50%;
     transform: translateX(-50%);
-    background: rgba(248,113,113,0.85);
-    color: white;
-    padding: 3px 8px;
-    border-radius: 4px;
+  }
+  .annotated-label.below::after { top: 100%; height: var(--connector-len, 28px); }
+  .annotated-label.above::after { bottom: 100%; height: var(--connector-len, 28px); }
+
+  .annotated.no-bbox .spotlight-svg, .annotated.no-bbox .annotated-label { display: none; }
+  .annotated.no-bbox::after {
+    content: "LOCATION UNCERTAIN — SEE NOTES";
+    position: absolute;
+    bottom: 10px; left: 50%;
+    transform: translateX(-50%);
+    background: rgba(11,17,32,0.85);
+    backdrop-filter: blur(6px);
+    color: var(--amber);
+    padding: 5px 11px;
+    border-radius: 6px;
     font-family: var(--font-mono);
-    font-size: 9px;
+    font-size: 10px;
     font-weight: 700;
     letter-spacing: 0.7px;
+    border: 1px solid rgba(251,191,36,0.4);
   }
+
+  /* ===== "Not found" state — distinct card ===== */
+  .not-found-card {
+    background: var(--surface);
+    border: 1px solid rgba(248,113,113,0.4);
+    border-radius: 14px;
+    padding: 24px 20px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+  }
+  .not-found-icon {
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    background: rgba(248,113,113,0.1);
+    border: 1px solid rgba(248,113,113,0.3);
+    display: grid; place-items: center;
+    color: var(--error);
+  }
+  .not-found-icon svg { width: 26px; height: 26px; }
+  .not-found-card h3 {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+  }
+  .not-found-card p {
+    color: var(--text-dim);
+    font-size: 13px;
+    line-height: 1.5;
+    max-width: 280px;
+  }
+  .not-found-tips {
+    width: 100%;
+    margin-top: 6px;
+    padding: 14px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .not-found-tips .tip {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    font-size: 13px;
+    color: var(--text);
+    line-height: 1.4;
+  }
+  .not-found-tips .tip-num {
+    flex-shrink: 0;
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: rgba(63,255,162,0.1);
+    color: var(--teal);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    display: grid; place-items: center;
+    margin-top: 1px;
+  }
+
+  /* Hide irrelevant sections when in not-found mode */
+  .pass.not-found .pass-route,
+  .pass.not-found .annotated,
+  .pass.not-found .pass-section.location,
+  .pass.not-found .pass-section.matched-section,
+  .pass.not-found #resNotesSection { display: none; }
 
   .pass-section {
     border-top: 1px dashed #d2d6dd;
@@ -1496,8 +1632,26 @@
 
         <div class="annotated" id="annotated">
           <img id="resultPileImg" alt="The pile" />
-          <svg class="reticle" viewBox="0 0 100 100" preserveAspectRatio="none" id="reticle"></svg>
-          <span class="reticle-label" id="reticleLabel" hidden>YOUR BAG</span>
+          <div class="spotlight-mask" id="spotlightMask"></div>
+          <div class="spotlight-ring-outer" id="spotlightOuter"></div>
+          <div class="spotlight-ring" id="spotlightRing"></div>
+          <div class="annotated-label" id="spotlightLabel" hidden>FOUND HERE</div>
+        </div>
+
+        <div class="not-found-card" id="notFoundCard" hidden>
+          <div class="not-found-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              <line x1="8" y1="11" x2="14" y2="11"/>
+            </svg>
+          </div>
+          <h3>Bag not found in pile</h3>
+          <p id="notFoundMsg">Grok couldn't confidently match your bag to anything in the tarmac photo. It may not be in the shot, or the angle may be obscuring it.</p>
+          <div class="not-found-tips">
+            <div class="tip"><span class="tip-num">1</span><span>Walk closer to the pile and re-shoot a wider, sharper photo.</span></div>
+            <div class="tip"><span class="tip-num">2</span><span>Add more reference angles — especially of the side facing up in the pile.</span></div>
+            <div class="tip"><span class="tip-num">3</span><span>If you're certain it's there, look for distinctive features (tags, ribbons) in the pile photo manually.</span></div>
+          </div>
         </div>
 
         <div class="pass-section location">
@@ -1505,7 +1659,7 @@
           <p id="resLocation">—</p>
         </div>
 
-        <div class="pass-section">
+        <div class="pass-section matched-section">
           <h4>Matched features</h4>
           <ul id="resMatched"></ul>
         </div>
@@ -2222,34 +2376,75 @@ No markdown, no fences, no extra text.`;
   };
 
   // ============== Render result (boarding pass) ==============
-  const renderReticle = (bbox) => {
+  // Heuristic: did Grok essentially say "I couldn't find it"?
+  const isNotFound = (result) => {
+    if (result.confidence === "Low" && !result.bbox && result.matched.length === 0) return true;
+    const text = (result.location + " " + result.notes).toLowerCase();
+    return /\b(no match|not found|cannot find|couldn'?t find|unable to (find|identify|locate)|no visible match|not present|isn'?t (there|present|visible))\b/.test(text);
+  };
+
+  const labelTextFor = (confidence) => {
+    if (confidence === "High")   return { text: "FOUND HERE",    cls: "high" };
+    if (confidence === "Medium") return { text: "POSSIBLY HERE", cls: "medium" };
+    return { text: "MIGHT BE HERE", cls: "low" };
+  };
+
+  const renderSpotlight = (bbox, confidence) => {
     const wrap = $("annotated");
-    const svg = $("reticle");
-    const label = $("reticleLabel");
+    const label = $("spotlightLabel");
+    const cls = confidence === "High" ? "high" : confidence === "Medium" ? "medium" : "low";
+
+    wrap.classList.remove("high", "medium", "low", "no-bbox");
     if (!bbox) {
       wrap.classList.add("no-bbox");
-      svg.innerHTML = "";
       label.hidden = true;
       return;
     }
-    wrap.classList.remove("no-bbox");
-    const { x, y, w, h } = bbox;
-    // SVG uses 0-100 coords with non-uniform scale because preserveAspectRatio="none"
-    const cl = 6; // corner length in svg units (~6%)
-    const corners = `
-      <rect class="reticle-pulse" x="${x}" y="${y}" width="${w}" height="${h}" />
-      <rect class="reticle-rect" x="${x}" y="${y}" width="${w}" height="${h}" rx="0.5" />
-      <path class="reticle-corner" d="M ${x} ${y + cl} L ${x} ${y} L ${x + cl} ${y}" />
-      <path class="reticle-corner" d="M ${x + w - cl} ${y} L ${x + w} ${y} L ${x + w} ${y + cl}" />
-      <path class="reticle-corner" d="M ${x + w} ${y + h - cl} L ${x + w} ${y + h} L ${x + w - cl} ${y + h}" />
-      <path class="reticle-corner" d="M ${x + cl} ${y + h} L ${x} ${y + h} L ${x} ${y + h - cl}" />
-    `;
-    svg.innerHTML = corners;
+    wrap.classList.add(cls);
 
-    // Position label above the bbox in container coords (use percent positioning)
-    label.style.left = `${Math.max(2, Math.min(70, x))}%`;
-    label.style.top  = `${Math.max(8, y)}%`;
+    const { x, y, w, h } = bbox;
+    // Add a small padding so the spotlight extends slightly beyond the bbox
+    const pad = 2; // % units
+    const cx = x + w / 2;
+    const cy = y + h / 2;
+    const rx = Math.max(6, w / 2 + pad);
+    const ry = Math.max(6, h / 2 + pad);
+
+    wrap.style.setProperty("--cx", `${cx}%`);
+    wrap.style.setProperty("--cy", `${cy}%`);
+    wrap.style.setProperty("--rx", `${rx}%`);
+    wrap.style.setProperty("--ry", `${ry}%`);
+
+    // Position the label outside the spotlight (above if there's room, otherwise below)
+    const { text, cls: lcls } = labelTextFor(confidence);
+    label.textContent = "";
+    const arrow = document.createElement("span");
+    arrow.className = "arrow";
+    arrow.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>`;
+    const txt = document.createElement("span");
+    txt.textContent = text;
+    label.appendChild(txt);
+    label.appendChild(arrow);
+
+    // Decide above or below
+    const labelBelow = (cy - ry) < 18; // not enough room above → put it below
+    const connectorLen = 22; // px
+    label.style.setProperty("--connector-len", `${connectorLen}px`);
+    label.classList.toggle("below", labelBelow);
+    label.classList.toggle("above", !labelBelow);
+
+    // Position horizontally centered on cx, vertically just outside the spotlight
+    label.style.left = `${cx}%`;
+    if (labelBelow) {
+      label.style.top = `calc(${cy + ry}% + ${connectorLen}px)`;
+      label.style.transform = "translate(-50%, 0)";
+    } else {
+      label.style.top = `calc(${cy - ry}% - ${connectorLen}px)`;
+      label.style.transform = "translate(-50%, -100%)";
+    }
     label.hidden = false;
+    // Rotate arrow if label is above (point down toward bag) vs below (point up)
+    arrow.style.transform = labelBelow ? "rotate(180deg)" : "none";
   };
 
   const formatTime = (d) => {
@@ -2267,9 +2462,18 @@ No markdown, no fences, no extra text.`;
 
   const renderResult = (result) => {
     const now = new Date();
+    const notFound = isNotFound(result);
+    const pass = $("pass");
+    pass.classList.toggle("not-found", notFound);
+    $("notFoundCard").hidden = !notFound;
 
     $("resultPileImg").src = state.pile.dataUrl;
-    renderReticle(result.bbox);
+    if (!notFound) renderSpotlight(result.bbox, result.confidence);
+
+    if (notFound) {
+      const reason = result.notes || "Grok couldn't confidently match your bag to anything in the tarmac photo.";
+      $("notFoundMsg").textContent = reason;
+    }
 
     const refThumbs = $("resultRefThumbs");
     refThumbs.innerHTML = state.bag.map(b => `<img src="${b.dataUrl}" alt="" />`).join("");
@@ -2277,9 +2481,13 @@ No markdown, no fences, no extra text.`;
     // Confidence badge
     const conf = result.confidence;
     const cls = conf === "High" ? "high" : conf === "Medium" ? "medium" : "low";
-    const statusText = conf === "High" ? "CONFIRMED" : conf === "Medium" ? "PROBABLE" : "UNCERTAIN";
+    let statusText;
+    if (notFound)            statusText = "NOT FOUND";
+    else if (conf === "High")   statusText = "CONFIRMED";
+    else if (conf === "Medium") statusText = "PROBABLE";
+    else                        statusText = "UNCERTAIN";
     const statusEl = $("passStatus");
-    statusEl.className = `pass-status ${cls}`;
+    statusEl.className = `pass-status ${notFound ? "low" : cls}`;
     statusEl.textContent = statusText;
 
     $("metaConfidence").textContent = conf.toUpperCase();
