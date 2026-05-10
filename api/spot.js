@@ -193,7 +193,87 @@ function bboxToPercent(box, w, h) {
   };
 }
 
-// ============== Grok explanation step ==============
+// ============== Grok-based matching from cropped candidates ==============
+
+async function pickMatchFromCandidates(refDataUrls, candidates) {
+  const key = process.env.XAI_API_KEY;
+  if (!key) throw new Error("XAI_API_KEY not set");
+
+  const userContent = [
+    { type: "text", text: `Here are ${refDataUrls.length} reference photo${refDataUrls.length === 1 ? "" : "s"} of MY specific bag (multiple angles of the same bag):` },
+    ...refDataUrls.map(url => ({ type: "image_url", image_url: { url, detail: "low" } })),
+    { type: "text", text: `\nA computer-vision detector found ${candidates.length} bag${candidates.length === 1 ? "" : "s"} in the tarmac pile and cropped each one. They are shown below IN ORDER, indexed 0 through ${candidates.length - 1}. Pick which crop is MY bag.` },
+    ...candidates.map((c, i) => ({ type: "image_url", image_url: { url: c.cropDataUrl, detail: "high" } })),
+    { type: "text", text: `\nReturn ONLY minified JSON with the 0-based index of the best match, distinguishing features that matched, calibrated confidence, and a 1–2 sentence note. If no candidate looks like the user's bag, return index -1.` },
+  ];
+
+  const r = await fetch("https://api.x.ai/v1/chat/completions", {
+    method: "POST",
+    headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "grok-4-fast-reasoning",
+      max_tokens: 700,
+      temperature: 0.2,
+      messages: [
+        {
+          role: "system",
+          content: `You are picking which detected luggage in a tarmac pile matches the user's reference bag. The crops are presented IN ORDER, indexed 0..N-1.
+
+Procedure:
+1. Note distinguishing features of the reference bag (dominant color, secondary color, shape class, hardware, tags, ribbons, stickers, scuffs).
+2. Look at each cropped candidate.
+3. Pick the single crop that best matches the reference.
+
+Confidence:
+- "High" = strong match on color + shape + at least one distinguishing detail
+- "Medium" = color and shape match but no distinguishing details visible
+- "Low" = guessing, OR multiple bags look identical, OR no candidate looks like the reference
+
+Output ONLY a single line of minified JSON in EXACTLY this shape (no markdown, no fences):
+{"index":<int>,"matched":["<feature 1>","<feature 2>",...],"confidence":"High|Medium|Low","notes":"<one or two sentences>"}
+
+Use index -1 only if no crop looks like the user's bag.`,
+        },
+        { role: "user", content: userContent },
+      ],
+    }),
+  });
+
+  if (!r.ok) {
+    const txt = await r.text().catch(() => "");
+    throw new Error(`Grok ${r.status}: ${txt.slice(0, 200)}`);
+  }
+  const data = await r.json();
+  const text = (data.choices?.[0]?.message?.content || "").trim();
+
+  // Tolerant parsing
+  let parsed = null;
+  try { parsed = JSON.parse(text); } catch {
+    const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (fenced) try { parsed = JSON.parse(fenced[1].trim()); } catch {}
+    if (!parsed) {
+      const s = text.indexOf("{"), e = text.lastIndexOf("}");
+      if (s !== -1 && e > s) try { parsed = JSON.parse(text.slice(s, e + 1)); } catch {}
+    }
+  }
+  if (!parsed) throw new Error("Grok returned unparseable response");
+
+  const idx = Number.isInteger(parsed.index) ? parsed.index : -1;
+  let matched = parsed.matched;
+  if (typeof matched === "string") matched = [matched];
+  if (!Array.isArray(matched)) matched = [];
+  const conf = String(parsed.confidence || "").trim().toLowerCase();
+  const confidence = conf.startsWith("h") ? "High" : conf.startsWith("m") ? "Medium" : "Low";
+
+  return {
+    index: idx,
+    matched: matched.map(s => String(s).trim()).filter(Boolean).slice(0, 8),
+    confidence,
+    notes: typeof parsed.notes === "string" ? parsed.notes.trim() : "",
+  };
+}
+
+// ============== Grok explanation step (legacy, used by full CLIP pipeline) ==============
 
 async function describeMatch(refDataUrls, matchDataUrl, score, secondScore) {
   const key = process.env.XAI_API_KEY;
@@ -266,6 +346,13 @@ No markdown, no code fences.`,
 // ============== Hybrid pipeline ==============
 
 async function runHybridPipeline(bagDataUrls, pileDataUrl) {
+  // Hybrid pipeline: 1 Replicate call (Grounding DINO for detection) +
+  // 1 Grok call (matching from cropped candidates). This gives us:
+  //   - Pixel-tight bboxes from a real CV detector (not VLM-estimated)
+  //   - Visual matching via Grok comparing the reference set against
+  //     each cropped candidate side-by-side
+  //   - Stays within Replicate's free-tier rate limit (1 prediction per
+  //     request) — works for users without paid credit
   const pileB64 = pileDataUrl.split(",")[1];
   const pileBuffer = Buffer.from(pileB64, "base64");
 
@@ -273,12 +360,8 @@ async function runHybridPipeline(bagDataUrls, pileDataUrl) {
   const W = meta.width, H = meta.height;
   if (!W || !H) throw new Error("Could not read pile image dimensions");
 
-  // Parallel: detect bags + embed references
-  const [detections, refEmbeddings] = await Promise.all([
-    detectBagsInPile(pileDataUrl),
-    Promise.all(bagDataUrls.map(getCLIPEmbedding)),
-  ]);
-
+  // Step 1: Detect every bag in the pile
+  const detections = await detectBagsInPile(pileDataUrl);
   if (detections.length === 0) {
     return {
       location: "No bags detected in the pile",
@@ -289,77 +372,55 @@ async function runHybridPipeline(bagDataUrls, pileDataUrl) {
     };
   }
 
-  // Cap candidates so we don't blow Replicate cost
+  // Cap candidates by detector score (top 12 keeps the Grok call manageable)
   const topDetections = [...detections]
     .sort((a, b) => (b.score || 0) - (a.score || 0))
     .slice(0, 12);
 
-  const refMean = meanVector(refEmbeddings);
-
-  // For each detection, crop and embed
+  // Step 2: Crop each detection from the pile (server-side with sharp)
   const candidates = await Promise.all(
     topDetections.map(async (det) => {
       const [x1, y1, x2, y2] = det.box.map(v => Math.max(0, Math.round(v)));
-      const left = Math.min(x1, W - 1), top = Math.min(y1, H - 1);
-      const width = Math.max(1, Math.min(x2 - x1, W - left));
+      const left   = Math.min(x1, W - 1);
+      const top    = Math.min(y1, H - 1);
+      const width  = Math.max(1, Math.min(x2 - x1, W - left));
       const height = Math.max(1, Math.min(y2 - y1, H - top));
 
       const cropBuffer = await sharp(pileBuffer)
         .extract({ left, top, width, height })
-        .resize(336, 336, { fit: "contain", background: { r: 0, g: 0, b: 0 } })
+        .resize(420, 420, { fit: "contain", background: { r: 0, g: 0, b: 0 } })
         .jpeg({ quality: 88 })
         .toBuffer();
 
-      const cropDataUrl = `data:image/jpeg;base64,${cropBuffer.toString("base64")}`;
-      let embedding;
-      try {
-        embedding = await getCLIPEmbedding(cropDataUrl);
-      } catch (err) {
-        console.error("CLIP embed failed for candidate:", err.message);
-        return null;
-      }
-      const score = cosineSimilarity(refMean, embedding);
-      return { ...det, box: [x1, y1, x2, y2], score };
+      return {
+        box: [x1, y1, x2, y2],
+        score: det.score,
+        cropDataUrl: `data:image/jpeg;base64,${cropBuffer.toString("base64")}`,
+      };
     })
   );
 
-  const valid = candidates.filter(Boolean).sort((a, b) => b.score - a.score);
-  if (valid.length === 0) throw new Error("All candidate embeddings failed");
+  // Step 3: Ask Grok which crop matches the reference bag
+  const pick = await pickMatchFromCandidates(bagDataUrls, candidates);
 
-  const best = valid[0];
-  const second = valid[1];
-
-  // Crop the winner for Grok
-  const [bx1, by1, bx2, by2] = best.box;
-  const bestCropBuffer = await sharp(pileBuffer)
-    .extract({ left: bx1, top: by1, width: bx2 - bx1, height: by2 - by1 })
-    .jpeg({ quality: 92 })
-    .toBuffer();
-  const bestCropDataUrl = `data:image/jpeg;base64,${bestCropBuffer.toString("base64")}`;
-
-  // Calibrated confidence from CV scores + ambiguity gap
-  let confidence;
-  if (best.score >= 0.85) confidence = "High";
-  else if (best.score >= 0.72) confidence = "Medium";
-  else confidence = "Low";
-
-  if (second && best.score - second.score < 0.04) {
-    confidence = confidence === "High" ? "Medium" : "Low";
+  // Step 4: Map the picked index back to its detection (with precise bbox)
+  if (pick.index < 0 || pick.index >= candidates.length) {
+    return {
+      location: "No confident match in the pile",
+      matched: [],
+      confidence: "Low",
+      notes: pick.notes || "Grok didn't recognize any of the detected bags as yours. The pile may be too far/blurry, or your bag may not be in the shot.",
+      bbox: null,
+    };
   }
 
-  const desc = await describeMatch(bagDataUrls, bestCropDataUrl, best.score, second?.score);
-
-  let notes = desc.notes;
-  if (second && best.score - second.score < 0.04) {
-    notes = `${notes} Multiple bags scored very similarly — verify the matched features in person before grabbing.`.trim();
-  }
-
+  const matched = candidates[pick.index];
   return {
-    location: locationDescriptor(best.box, W, H),
-    matched: desc.matched,
-    confidence,
-    notes,
-    bbox: bboxToPercent(best.box, W, H),
+    location: locationDescriptor(matched.box, W, H),
+    matched: pick.matched,
+    confidence: pick.confidence,
+    notes: pick.notes,
+    bbox: bboxToPercent(matched.box, W, H),
   };
 }
 
@@ -476,7 +537,6 @@ export default async function handler(req, res) {
       return res.status(200).json({ text: JSON.stringify(result), pipeline: "hybrid" });
     } catch (err) {
       console.error("Hybrid pipeline failed, falling back to Grok-only:", err.message);
-      // Fall through to Grok-only
     }
   }
 
