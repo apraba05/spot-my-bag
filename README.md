@@ -42,12 +42,27 @@ Works in any modern mobile browser. Installable as a PWA from iOS Safari (Share 
 
 ## How it works
 
+A hybrid CV + LLM pipeline. Specialized vision models do what they're best at (object detection, embedding-based similarity), and the LLM does what it's best at (natural-language explanation).
+
 1. **360° reference scan** — User captures up to 8 photos of their bag from different angles using the in-app camera (live `getUserMedia` viewfinder, shutter button, progress dots, capture-to-strip preview).
 2. **Pile photo** — One wide photo of the luggage pile.
-3. **Client-side compression** — Images are downscaled to ~1600px JPEG @ 0.82 quality before upload.
-4. **Server-side proxy** (`/api/spot`) — A Vercel Function validates the payload (1–8 reference images, ≤1.5MB each, ≤10MB total), rate-limits per IP, then calls xAI with the images and a structured prompt.
-5. **Grok vision** — `grok-4-fast-non-reasoning` returns minified JSON with `location`, `matched[]`, `confidence`, `notes`, and a `bbox` (as percentages of the pile image).
-6. **Annotated result** — The client overlays a glowing teal targeting reticle on the pile photo at the returned coordinates, presented inside a boarding-pass-style result card with a perforated stub and barcode.
+3. **Client-side compression** — Images are downscaled to ~1800px JPEG @ 0.85 quality before upload.
+4. **Server-side proxy** (`/api/spot`) — A Vercel Function validates the payload (1–8 reference images, ≤1.5MB each, ≤10MB total), rate-limits per IP, then runs the search:
+
+### Hybrid pipeline (when `REPLICATE_API_TOKEN` is set)
+
+   1. **Grounding DINO** (Replicate) detects every bag in the pile photo and returns pixel-tight bounding boxes
+   2. **CLIP** (Replicate) embeds the user's reference photos (mean-pooled) and each detected bag region (after server-side cropping with `sharp`)
+   3. **Cosine similarity** ranks every candidate bag against the reference vector
+   4. **Calibrated confidence** is computed from the top match's score and the gap to the runner-up (close gap = ambiguous = lower confidence)
+   5. **Grok-4** writes the natural-language explanation: which visible features match, what to verify in person
+   6. Returns a precise pixel-accurate bbox + matched features + calibrated confidence
+
+### Grok-only fallback (when Replicate isn't configured)
+
+   - `grok-4-fast-reasoning` handles the full task (detection, matching, explanation) in one call with a stepwise prompt that walks the model through extracting features → scanning the tarmac → ranking candidates → emitting a tight bbox
+
+5. **Annotated result** — The client dims the rest of the pile photo, draws a glowing pulsing ring around the matched bag's bbox, and adds a labeled callout (`FOUND HERE` / `POSSIBLY HERE` / `MIGHT BE HERE`) color-coded to confidence. Presented inside a boarding-pass-style card with a perforated stub.
 
 ## Stack
 
@@ -82,19 +97,26 @@ The visual identity is a vintage-travel × modern-app crossover:
 git clone https://github.com/apraba05/spot-my-bag.git
 cd spot-my-bag
 
-# 2. Get an xAI API key at https://console.x.ai
-
-# 3. Link & deploy to Vercel (creates the project)
+# 2. Link & deploy to Vercel (creates the project)
 npx vercel deploy --prod
 
-# 4. Set the env var (paste key when prompted, or pipe in)
+# 3. Add the xAI key (required — used by both pipelines)
+#    Get one at https://console.x.ai
 npx vercel env add XAI_API_KEY production
 
-# 5. Re-deploy so the function picks up the env var
+# 4. Add the Replicate key (optional but strongly recommended for accuracy)
+#    Get one at https://replicate.com/account/api-tokens
+#    Free $5 trial credit gets you ~100 searches before billing
+npx vercel env add REPLICATE_API_TOKEN production
+
+# 5. Re-deploy so the function picks up the env vars
 npx vercel deploy --prod
 ```
 
-Vercel auto-detects this as a static site with serverless functions in `/api`. No further config needed.
+Vercel auto-detects the project: static site at the root + Node serverless function in `/api`. The `package.json` declares `sharp` for server-side image cropping in the hybrid pipeline.
+
+**Without `REPLICATE_API_TOKEN`** the app still works — it falls back to a Grok-only pipeline (slower, less precise bbox, weaker matching).
+**With `REPLICATE_API_TOKEN`** you get the full hybrid CV pipeline (Grounding DINO + CLIP + Grok).
 
 ### Local dev
 
@@ -111,11 +133,13 @@ To run the API locally, use `vercel dev` instead — it spins up the function an
 ```
 .
 ├── api/
-│   └── spot.js           # Vercel Function — xAI proxy + rate limit + validation
+│   └── spot.js           # Vercel Function — hybrid CV+LLM pipeline + rate limit + validation
+├── package.json          # sharp (for server-side image cropping)
 ├── index.html            # The entire app — UI, camera, state, API client
-├── sw.js                 # Service worker (offline app shell)
+├── sw.js                 # Service worker (network-first HTML, cache-first assets)
 ├── manifest.json         # PWA manifest
 ├── vercel.json           # Headers (cache, perms-policy, content-type-options)
+├── favicon.ico           # Multi-resolution favicon (16/32/48/64)
 ├── og.png                # Open Graph social card (1200×630)
 ├── apple-touch-icon.png  # iOS home-screen icon (180×180)
 ├── icon-192.png          # PWA icon

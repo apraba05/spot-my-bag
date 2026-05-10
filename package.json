@@ -1,0 +1,12 @@
+{
+  "name": "spotmybag",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AI luggage finder — find your bag in the tarmac pile.",
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "sharp": "^0.33.5"
+  }
+}
