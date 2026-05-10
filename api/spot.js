@@ -107,13 +107,15 @@ async function replicateRun(version, input) {
 async function detectBagsInPile(pileDataUrl) {
   const output = await replicateRun(REPLICATE_GROUNDING_DINO_VERSION, {
     image: pileDataUrl,
-    query: "luggage. suitcase. bag. backpack. duffel bag. carry-on.",
-    box_threshold: 0.22,
-    text_threshold: 0.20,
+    query: "suitcase. luggage. bag. backpack. duffel.",
+    box_threshold: 0.15,
+    text_threshold: 0.15,
   });
 
-  // Output is { detections: [{box: [x1,y1,x2,y2], label, score}], ... }
-  // Some versions return { result_image, detections }
+  // Stash for diagnostics
+  globalThis.__lastDetectionRaw = output;
+
+  // Various output shapes seen across versions of this model
   let dets = [];
   if (Array.isArray(output)) {
     dets = output;
@@ -121,15 +123,23 @@ async function detectBagsInPile(pileDataUrl) {
     dets = output.detections;
   } else if (output && Array.isArray(output.predictions)) {
     dets = output.predictions;
+  } else if (output && Array.isArray(output.boxes)) {
+    // Older grounding-dino output: parallel arrays of boxes/scores/labels
+    const boxes = output.boxes;
+    const scores = output.scores || [];
+    const labels = output.labels || output.phrases || [];
+    dets = boxes.map((box, i) => ({ box, score: scores[i], label: labels[i] }));
   }
 
+  // Some versions name the field "box", others "bbox" — accept both.
   return dets
-    .filter(d => Array.isArray(d.box) && d.box.length === 4)
     .map(d => ({
-      box: d.box.map(Number),
+      box: Array.isArray(d.box) ? d.box : (Array.isArray(d.bbox) ? d.bbox : null),
       score: Number(d.score ?? d.confidence ?? 0),
       label: String(d.label ?? "bag"),
-    }));
+    }))
+    .filter(d => d.box && d.box.length === 4)
+    .map(d => ({ ...d, box: d.box.map(Number) }));
 }
 
 async function getCLIPEmbedding(dataUrl) {
