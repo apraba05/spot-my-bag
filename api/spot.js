@@ -5,16 +5,36 @@ export const config = {
   maxDuration: 60,
 };
 
-const SYSTEM_PROMPT = `You are a luggage identification assistant. The first set of images are reference photos of a single user's bag, captured from multiple angles (a "360 scan"). Treat them together as one bag — combine their information (color, shape, size, brand markings, stickers, handles, wheels, zippers, ribbons, tags, scuffs, unique features). If flight context is provided (airline, flight number, arrival airport), treat it as informational metadata only, not as identification evidence. The final image is a crowd of luggage on an airport tarmac. Your job is to find which bag in the final image most likely belongs to the user.
+const SYSTEM_PROMPT = `You are a luggage identification assistant. The user provides:
+1. A reference set of N photos showing their specific bag from multiple angles (a "360 scan").
+2. A final wide photo of an airport tarmac with many bags.
 
-Describe where the bag is in the tarmac photo (e.g., "center-right of the pile, second row from the front"), what specific features matched, and give a confidence level: High, Medium, or Low. If multiple bags look similar, say so and list what to look for to narrow it down. If you truly cannot find a match, say so honestly.
+Your job: find their specific bag in the tarmac photo. Treat the reference photos collectively as one bag — combine information from all of them.
 
-You must also estimate the bounding box of the matched bag in the tarmac image as percentages of the image dimensions (origin top-left). x and y are the top-left corner; w and h are width/height. All four are integers 0–100. If you cannot localize the bag confidently, set bbox to null.
+Procedure (follow this internally before answering):
+A. From the reference photos, list 4–6 distinguishing features of the user's bag. Examples: hardshell vs softshell, dominant color, secondary colors, size class (carry-on / medium / large), brand markings or logos, ribbon or strap colors, attached tags, sticker placement, handle and wheel style, zipper color, fabric texture, scuffs, dents.
+B. Scan the tarmac photo systematically: top-left, top-center, top-right, middle row, bottom row.
+C. Build a shortlist of candidate bags in the pile that share the user's bag's color and rough shape.
+D. For each candidate, check off how many distinguishing features actually match.
+E. Pick the single best candidate. If two are nearly identical, pick the one with more matching features and call out the ambiguity in notes.
 
-Respond ONLY in valid minified JSON with this exact shape:
-{"location":"<short phrase>","matched":["<feature>","<feature>",...],"confidence":"High|Medium|Low","notes":"<one or two sentences>","bbox":{"x":<int>,"y":<int>,"w":<int>,"h":<int>}}
+Be useful, not overcautious. The user is at an airport and needs an answer.
 
-Do not include markdown, code fences, or any text outside the JSON object. If you cannot find a confident match, set confidence to "Low", bbox to null, and explain in notes.`;
+Confidence calibration:
+- "High" = strong match on shape AND color AND at least one distinguishing detail (sticker, ribbon, tag, etc.)
+- "Medium" = shape and color match but you can't see distinguishing details clearly
+- "Low" = guessing, OR pile photo is too blurry/far/dark to evaluate, OR multiple bags are essentially identical
+
+Bounding box rules:
+- Estimate a TIGHT box around your single best candidate in the tarmac image
+- All four values are integers 0–100 representing percent of image dimensions, origin top-left
+- x = left edge, y = top edge, w = width, h = height
+- Set bbox to null ONLY if you genuinely cannot pick any candidate
+
+If flight context (airline / flight number / arrival airport) is provided, it's informational only — do NOT use it as identification evidence.
+
+Output ONLY a single line of minified JSON in exactly this shape, no markdown, no code fences, no extra text:
+{"location":"<phrase like 'center-right of pile, second row from front'>","matched":["<feature 1>","<feature 2>",...],"confidence":"High|Medium|Low","notes":"<one or two sentences with caveats or what to verify in person>","bbox":{"x":<int>,"y":<int>,"w":<int>,"h":<int>}}`;
 
 const MAX_BAG_IMAGES = 8;
 const MAX_DATA_URL_BYTES = 1_500_000;        // ~1.5MB per image (base64)
@@ -175,8 +195,8 @@ export default async function handler(req, res) {
         "Authorization": `Bearer ${key}`,
       },
       body: JSON.stringify({
-        model: "grok-4-fast-non-reasoning",
-        max_tokens: 800,
+        model: "grok-4-fast-reasoning",
+        max_tokens: 1200,
         temperature: 0.2,
         messages: [
           { role: "system", content: SYSTEM_PROMPT },

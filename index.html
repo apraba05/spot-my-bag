@@ -1347,7 +1347,7 @@
   .cam-flash.fire { opacity: 0.9; transition: opacity 0s; }
   .cam-grant {
     position: absolute; inset: 0;
-    display: grid; place-items: center;
+    place-items: center;
     color: #b8c0d0;
     text-align: center;
     padding: 24px;
@@ -1355,7 +1355,11 @@
     font-size: 13px;
     line-height: 1.5;
     z-index: 4;
+    background: rgba(0,0,0,0.65);
+    backdrop-filter: blur(6px);
   }
+  .cam-grant:not([hidden]) { display: grid; }
+  .cam-grant[hidden] { display: none !important; }
 
   .cam-top {
     position: absolute;
@@ -1989,11 +1993,12 @@
 (() => {
   "use strict";
 
-  const MODEL = "grok-4-fast-non-reasoning";
+  const MODEL = "grok-4-fast-reasoning";
   const STORAGE_KEY = "spotmybag.xaiKey";
   const FLIGHT_KEY = "spotmybag.flight";
   const MAX_BYTES = 2 * 1024 * 1024;
-  const COMPRESS_MAX_DIM = 1600;
+  const COMPRESS_MAX_DIM = 1800;
+  const COMPRESS_QUALITY = 0.85;
   const SCAN_MIN = 4;
   const SCAN_MAX = 8;
 
@@ -2058,7 +2063,7 @@
       const canvas = document.createElement("canvas");
       canvas.width = width; canvas.height = height;
       canvas.getContext("2d").drawImage(img, 0, 0, width, height);
-      resolve({ dataUrl: canvas.toDataURL("image/jpeg", 0.82), mediaType: "image/jpeg" });
+      resolve({ dataUrl: canvas.toDataURL("image/jpeg", COMPRESS_QUALITY), mediaType: "image/jpeg" });
     };
     img.onerror = reject;
     img.src = dataUrl;
@@ -2318,8 +2323,14 @@
       stopStream();
       camEls.grant().hidden = false;
       camEls.grant().textContent = "STARTING CAMERA…";
+      // Request the best resolution the device can give us. Hard min to avoid
+      // iOS Safari falling back to 720p when "ideal" is requested.
       camStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: camFacing }, width: { ideal: 1920 }, height: { ideal: 1080 } },
+        video: {
+          facingMode: { ideal: camFacing },
+          width:  { min: 1280, ideal: 2560 },
+          height: { min: 720,  ideal: 1440 },
+        },
         audio: false,
       });
       const video = camEls.video();
@@ -2368,16 +2379,36 @@
     requestAnimationFrame(() => requestAnimationFrame(() => f.classList.remove("fire")));
   };
 
-  const captureFrame = () => {
+  // Try ImageCapture API first (gets full sensor resolution on supported
+  // browsers — Chrome Android), fall back to drawing the video frame onto
+  // a canvas (works everywhere including iOS Safari).
+  const captureFrame = async () => {
     const video = camEls.video();
     if (!video.videoWidth) return null;
+
+    if (camStream && typeof window.ImageCapture === "function") {
+      try {
+        const track = camStream.getVideoTracks()[0];
+        if (track && track.readyState === "live") {
+          const ic = new ImageCapture(track);
+          const blob = await ic.takePhoto();
+          return await new Promise((resolve, reject) => {
+            const r = new FileReader();
+            r.onload = () => resolve(r.result);
+            r.onerror = reject;
+            r.readAsDataURL(blob);
+          });
+        }
+      } catch (e) { /* fall through to canvas */ }
+    }
+
     const canvas = document.createElement("canvas");
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     const ctx = canvas.getContext("2d");
     if (camFacing === "user") { ctx.translate(canvas.width, 0); ctx.scale(-1, 1); }
     ctx.drawImage(video, 0, 0);
-    return canvas.toDataURL("image/jpeg", 0.9);
+    return canvas.toDataURL("image/jpeg", 0.95);
   };
 
   const renderProgressDots = () => {
@@ -2416,7 +2447,7 @@
   };
 
   camEls.shutter().addEventListener("click", async () => {
-    const dataUrl = captureFrame();
+    const dataUrl = await captureFrame();
     if (!dataUrl) return;
     flashShutter();
     if (camMode === "scan") {
