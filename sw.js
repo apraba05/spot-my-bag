@@ -1,6 +1,6 @@
 // SpotMyBag service worker — network-first for HTML so updates propagate
 // immediately, cache-first for icons/og.
-const CACHE = "spotmybag-v7";
+const CACHE = "spotmybag-v8";
 const SHELL = [
   "./",
   "./index.html",

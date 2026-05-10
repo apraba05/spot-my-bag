@@ -4,11 +4,10 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<meta name="theme-color" content="#0b1120" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="theme-color" content="#faf6ed" />
 <meta name="description" content="Find your bag in the luggage pile on the tarmac. Scan it from every angle and let AI spot it for you." />
 
-<!-- Open Graph -->
 <meta property="og:type" content="website" />
 <meta property="og:title" content="SpotMyBag" />
 <meta property="og:description" content="Lost in a sea of black suitcases? Scan your bag from every angle and let AI find it on the tarmac." />
@@ -18,7 +17,6 @@
 <meta name="twitter:description" content="AI luggage finder for your next flight." />
 <meta name="twitter:image" content="./og.png" />
 
-<!-- PWA -->
 <link rel="manifest" href="./manifest.json" />
 <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
 <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png" />
@@ -26,50 +24,56 @@
 <meta name="apple-mobile-web-app-title" content="SpotMyBag" />
 <meta name="mobile-web-app-capable" content="yes" />
 
-<!-- Fonts: Inter (display/body) + JetBrains Mono (data/airline codes) -->
+<!-- Fonts: Instrument Serif (display) + DM Sans (UI) + IBM Plex Mono (data) -->
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
 <title>SpotMyBag — Baggage Locator</title>
 
-<!-- Vercel Web Analytics -->
 <script defer src="/_vercel/insights/script.js"></script>
 
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
-    /* Aviation palette: navy runway-at-night + departure-board teal */
-    --bg:           #0b1120;
-    --bg-2:         #0d1b3e;
-    --surface:      #141e35;
-    --surface-2:    #1a2742;
-    --surface-3:    #213056;
-    --border:       rgba(255,255,255,0.08);
-    --border-strong:rgba(255,255,255,0.16);
-    --text:         #ffffff;
-    --text-dim:     #8fa3c8;
-    --text-faint:   #4a5b7e;
-    --teal:         #3fffa2;
-    --teal-glow:    rgba(63,255,162,0.18);
-    --teal-deep:    #1ee687;
-    --blue:         #4f8ef7;
-    --amber:        #fbbf24;
-    --amber-deep:   #f59e0b;
-    --error:        #f87171;
-    --radius:       16px;
-    --radius-sm:    10px;
-    --font-sans:    "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-    --font-mono:    "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+    /* Vintage travel + modern app — cream paper, deep navy ink, warm coral stamp */
+    --bg:           #faf6ed;
+    --bg-warm:      #f3eee0;
+    --surface:      #ffffff;
+    --surface-warm: #f7f3e8;
+    --surface-dark: #1a1f2e;
+    --ink:          #1a1f2e;
+    --ink-2:        #4a5060;
+    --ink-3:        #8b94a4;
+    --ink-4:        #c8c0a8;
+    --rule:         #e8e1d0;
+    --rule-strong:  #cdc4ad;
+
+    --coral:        #f54b2a;
+    --coral-deep:   #d63a1c;
+    --coral-soft:   #fde4dc;
+    --coral-glow:   rgba(245,75,42,0.18);
+    --azure:        #0e5dd6;
+    --azure-soft:   #d8e6fb;
+    --amber:        #d68900;
+    --amber-soft:   #fcefcf;
+    --success:      #1a8b4d;
+    --error:        #c93922;
+
+    --radius:       18px;
+    --radius-sm:    12px;
+
+    --font-display: "Instrument Serif", "Times New Roman", Georgia, serif;
+    --font-sans:    "DM Sans", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    --font-mono:    "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
   }
 
   html, body {
     height: 100%;
     background: var(--bg);
-    color: var(--text);
+    color: var(--ink);
     font-family: var(--font-sans);
-    font-feature-settings: "ss01", "cv11";
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     -webkit-tap-highlight-color: transparent;
@@ -83,29 +87,25 @@
     min-height: 100dvh;
     padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
     background:
-      radial-gradient(ellipse at 80% -10%, rgba(63,255,162,0.07) 0%, transparent 50%),
-      radial-gradient(ellipse at -10% 100%, rgba(79,142,247,0.05) 0%, transparent 50%),
+      radial-gradient(ellipse at 90% -10%, var(--coral-soft) 0%, transparent 45%),
+      radial-gradient(ellipse at -10% 110%, var(--azure-soft) 0%, transparent 50%),
       var(--bg);
   }
 
-  /* Scattered runway-light particles */
+  /* Subtle paper grain via tiny scattered dots */
   body::before {
     content: "";
     position: fixed;
     inset: 0;
     background-image:
-      radial-gradient(circle at 12% 18%, rgba(63,255,162,0.7) 0, transparent 1.2px),
-      radial-gradient(circle at 27% 70%, rgba(79,142,247,0.5) 0, transparent 1px),
-      radial-gradient(circle at 48% 28%, rgba(255,255,255,0.3) 0, transparent 0.8px),
-      radial-gradient(circle at 71% 58%, rgba(63,255,162,0.5) 0, transparent 1.1px),
-      radial-gradient(circle at 87% 14%, rgba(255,255,255,0.4) 0, transparent 0.9px),
-      radial-gradient(circle at 92% 84%, rgba(79,142,247,0.6) 0, transparent 1px),
-      radial-gradient(circle at 14% 90%, rgba(63,255,162,0.4) 0, transparent 0.9px),
-      radial-gradient(circle at 56% 92%, rgba(255,255,255,0.25) 0, transparent 0.8px);
-    background-size: 100% 100%;
+      radial-gradient(circle at 18% 24%, rgba(26,31,46,0.06) 0, transparent 1.2px),
+      radial-gradient(circle at 47% 60%, rgba(26,31,46,0.05) 0, transparent 1px),
+      radial-gradient(circle at 78% 36%, rgba(26,31,46,0.05) 0, transparent 1px),
+      radial-gradient(circle at 32% 82%, rgba(26,31,46,0.04) 0, transparent 1px),
+      radial-gradient(circle at 88% 88%, rgba(26,31,46,0.05) 0, transparent 1.2px);
     pointer-events: none;
     z-index: 0;
-    opacity: 0.9;
+    mix-blend-mode: multiply;
   }
 
   .app {
@@ -119,212 +119,181 @@
     z-index: 1;
   }
 
-  /* Airline-stripe top banner — real airline brand stripes are 3-color */
+  /* ====== Top airline-stripe (now coral/amber/navy — premium travel vibes) ====== */
   .top-stripe {
-    height: 3px;
+    height: 4px;
     background: linear-gradient(90deg,
-      var(--teal-deep) 0%,
-      var(--teal) 40%,
-      var(--amber) 80%,
-      var(--amber-deep) 100%);
-    box-shadow: 0 0 8px var(--teal-glow);
+      var(--coral) 0% 33%,
+      var(--amber) 33% 66%,
+      var(--ink) 66% 100%);
   }
 
-  /* ================== HEADER ================== */
+  /* ====== Header ====== */
   header {
-    padding: 14px 18px 10px;
+    padding: 18px 20px 10px;
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 10px;
   }
 
-  .brand { display: flex; align-items: center; gap: 11px; }
+  .brand { display: flex; align-items: center; gap: 12px; }
 
   .logo {
-    width: 34px; height: 34px;
-    border-radius: 9px;
-    background: linear-gradient(135deg, var(--teal) 0%, var(--teal-deep) 100%);
+    width: 38px; height: 38px;
+    border-radius: 11px;
+    background: var(--coral);
+    color: #ffffff;
     display: grid; place-items: center;
-    box-shadow: 0 6px 20px -4px var(--teal-glow), inset 0 0 0 1px rgba(255,255,255,0.15);
+    box-shadow: 0 8px 22px -6px var(--coral-glow), inset 0 0 0 1.5px rgba(255,255,255,0.18);
     position: relative;
-    overflow: hidden;
   }
-  .logo svg { width: 20px; height: 20px; color: #06311b; transform: rotate(-30deg); }
-  /* Subtle scanline effect on logo to make it feel "screen" / departure-board */
-  .logo::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: repeating-linear-gradient(0deg, transparent 0 2px, rgba(0,0,0,0.08) 2px 3px);
-    pointer-events: none;
-  }
+  .logo svg { width: 20px; height: 20px; }
 
   .brand-text { display: flex; flex-direction: column; line-height: 1; }
   .brand-name {
-    font-family: var(--font-sans);
-    font-size: 16px; font-weight: 800;
+    font-family: var(--font-display);
+    font-size: 26px;
+    font-weight: 400;
     letter-spacing: -0.4px;
+    color: var(--ink);
+    line-height: 0.9;
+  }
+  .brand-name em {
+    font-style: italic;
+    color: var(--coral);
   }
   .brand-tag {
     font-family: var(--font-mono);
-    font-size: 9.5px; font-weight: 500;
-    color: var(--text-dim);
-    letter-spacing: 1.2px;
-    margin-top: 3px;
+    font-size: 9.5px;
+    font-weight: 500;
+    color: var(--ink-3);
+    letter-spacing: 1.5px;
+    margin-top: 4px;
     text-transform: uppercase;
   }
 
   .header-actions { display: flex; align-items: center; gap: 6px; }
 
   .icon-btn {
-    width: 36px; height: 36px;
+    width: 38px; height: 38px;
     border-radius: 50%;
-    border: 1px solid var(--border);
+    border: 1px solid var(--rule);
     background: var(--surface);
-    color: var(--text-dim);
+    color: var(--ink-2);
     display: grid; place-items: center;
     cursor: pointer;
-    transition: transform 0.15s, color 0.15s, border-color 0.15s;
+    transition: transform 0.15s, color 0.15s, border-color 0.15s, background 0.15s;
   }
   .icon-btn:active { transform: scale(0.92); }
-  .icon-btn:hover { color: var(--text); border-color: var(--border-strong); }
-  .icon-btn svg { width: 15px; height: 15px; }
+  .icon-btn:hover { color: var(--ink); border-color: var(--ink-3); }
+  .icon-btn svg { width: 16px; height: 16px; }
 
   .install-chip {
     display: inline-flex; align-items: center; gap: 6px;
-    padding: 7px 12px 7px 10px;
+    padding: 8px 13px 8px 11px;
     border-radius: 999px;
-    background: var(--teal);
-    color: #06311b;
+    background: var(--coral);
+    color: #ffffff;
     border: none;
     font-family: var(--font-mono);
     font-size: 10.5px; font-weight: 700;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.6px;
     cursor: pointer;
     text-transform: uppercase;
-    box-shadow: 0 4px 14px -4px var(--teal-glow);
+    box-shadow: 0 6px 16px -4px var(--coral-glow);
   }
   .install-chip:active { transform: scale(0.95); }
   .install-chip svg { width: 12px; height: 12px; }
 
-  /* ================== MAIN ================== */
+  /* ====== Main ====== */
   main {
     flex: 1;
-    padding: 4px 18px 28px;
+    padding: 6px 20px 28px;
     display: flex;
     flex-direction: column;
-    gap: 18px;
+    gap: 22px;
   }
 
-  /* Departure-board status strip */
+  /* Status strip */
   .status-strip {
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 10px 14px;
-    background: linear-gradient(90deg, rgba(20,30,53,0.9), rgba(26,39,66,0.6));
-    border: 1px solid var(--border);
-    border-radius: 10px;
+    padding: 11px 14px;
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 12px;
     font-family: var(--font-mono);
     font-size: 11px;
-    color: var(--text-dim);
-    letter-spacing: 0.5px;
-    overflow: hidden;
+    color: var(--ink-2);
+    letter-spacing: 0.4px;
+    box-shadow: 0 1px 0 rgba(26,31,46,0.04);
   }
   .status-dot {
     width: 8px; height: 8px;
     border-radius: 50%;
-    background: var(--teal);
-    box-shadow: 0 0 12px var(--teal);
+    background: var(--success);
+    box-shadow: 0 0 10px rgba(26,139,77,0.4);
     animation: pulseDot 2.4s ease-in-out infinite;
     flex-shrink: 0;
   }
-  .status-strip .label { color: var(--text-faint); }
-  .status-strip .value { color: var(--teal); font-weight: 600; }
+  .status-strip .label { color: var(--ink-3); }
+  .status-strip .value { color: var(--ink); font-weight: 600; }
   .status-strip .ticker {
     margin-left: auto;
     font-size: 10px;
-    color: var(--text-faint);
+    color: var(--ink-3);
     white-space: nowrap;
     overflow: hidden;
   }
   @keyframes pulseDot {
     0%, 100% { opacity: 1; }
-    50%      { opacity: 0.4; }
+    50%      { opacity: 0.45; }
   }
 
-  /* Hero */
+  /* ====== Hero — editorial travel-mag treatment ====== */
   .hero {
-    padding: 4px 0 0;
+    padding: 8px 0 0;
     position: relative;
     overflow: visible;
   }
-  /* Plane silhouette taking off from the hero */
-  .hero-plane {
-    position: absolute;
-    top: -10px;
-    right: -30px;
-    width: 220px;
-    height: 220px;
-    color: var(--teal);
-    opacity: 0.08;
-    pointer-events: none;
-    transform: rotate(-15deg);
-    z-index: 0;
-  }
-  .hero-plane svg { width: 100%; height: 100%; }
-  /* Trail dashes behind the plane */
-  .hero-trail {
-    position: absolute;
-    top: 80px;
-    right: 110px;
-    width: 80px;
+  .hero-rule {
+    width: 36px;
     height: 1px;
-    background: linear-gradient(90deg, transparent, var(--teal) 50%, transparent);
-    opacity: 0.35;
-    pointer-events: none;
-    transform: rotate(-15deg);
+    background: var(--coral);
+    margin-bottom: 14px;
   }
-  .hero > * { position: relative; z-index: 1; }
   .hero .kicker {
     font-family: var(--font-mono);
     font-size: 10.5px;
     font-weight: 600;
-    color: var(--teal);
+    color: var(--coral);
     letter-spacing: 1.6px;
     text-transform: uppercase;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 14px;
-  }
-  .hero .kicker::before {
-    content: "";
-    width: 18px; height: 1px;
-    background: var(--teal);
+    margin-bottom: 12px;
   }
   .hero h2 {
-    font-size: 36px;
-    line-height: 0.98;
-    font-weight: 900;
-    letter-spacing: -1.5px;
-    color: var(--text);
+    font-family: var(--font-display);
+    font-size: 56px;
+    line-height: 0.95;
+    font-weight: 400;
+    letter-spacing: -2px;
+    color: var(--ink);
   }
-  .hero h2 .glow {
-    color: var(--teal);
-    text-shadow: 0 0 30px rgba(63,255,162,0.25);
+  .hero h2 em {
+    font-style: italic;
+    color: var(--coral);
   }
   .hero p {
-    margin-top: 14px;
-    color: var(--text-dim);
-    font-size: 14px;
+    margin-top: 16px;
+    color: var(--ink-2);
+    font-size: 15px;
     line-height: 1.55;
-    letter-spacing: -0.05px;
-    max-width: 320px;
+    max-width: 340px;
   }
 
-  /* ================== STEP / LUGGAGE TAG ================== */
+  /* ====== Step / Luggage tag ====== */
   .step { display: flex; flex-direction: column; gap: 10px; }
 
   .step-meta {
@@ -333,7 +302,7 @@
     gap: 10px;
     font-family: var(--font-mono);
     font-size: 10.5px;
-    color: var(--text-dim);
+    color: var(--ink-3);
     letter-spacing: 1px;
     text-transform: uppercase;
   }
@@ -341,38 +310,46 @@
     display: inline-flex;
     align-items: center;
     gap: 5px;
-    padding: 4px 8px;
-    border: 1px solid var(--border);
+    padding: 4px 9px;
+    border: 1px solid var(--rule-strong);
     border-radius: 5px;
-    color: var(--teal);
+    color: var(--coral);
     font-weight: 700;
-    background: rgba(63,255,162,0.05);
+    background: var(--surface-warm);
   }
-  .step-code .slash { color: var(--text-faint); }
-  .step.done .step-code { border-color: var(--teal); background: rgba(63,255,162,0.12); }
+  .step-code .slash { color: var(--ink-3); }
+  .step.done .step-code { border-color: var(--coral); background: var(--coral-soft); }
   .step-meta .helper {
     margin-left: auto;
-    color: var(--text-faint);
+    color: var(--ink-3);
     font-size: 10px;
   }
 
-  /* Luggage-tag-style upload zone — real baggage tags have a punch hole + ID strip */
+  /* Upload tag */
   .tag-zone {
     position: relative;
     width: 100%;
-    border-radius: 14px;
+    border-radius: var(--radius);
     background: var(--surface);
-    border: 1px solid var(--border);
+    border: 1px dashed var(--rule-strong);
     aspect-ratio: 16/10;
     overflow: hidden;
     cursor: pointer;
-    transition: transform 0.15s, border-color 0.2s;
+    transition: transform 0.15s, border-color 0.2s, box-shadow 0.2s;
     display: grid; place-items: center;
     color: inherit;
     font-family: inherit;
     padding: 0;
+    box-shadow: 0 1px 2px rgba(26,31,46,0.04);
   }
-  /* Punch hole at top-left like a real luggage tag */
+  .tag-zone:hover { border-color: var(--ink-3); box-shadow: 0 4px 14px -4px rgba(26,31,46,0.08); }
+  .tag-zone:active { transform: scale(0.99); }
+  .tag-zone.has-image {
+    border-style: solid;
+    border-color: var(--coral);
+    background: #000;
+  }
+  /* Punch hole at top-left */
   .tag-zone::before {
     content: "";
     position: absolute;
@@ -380,96 +357,100 @@
     width: 14px; height: 14px;
     border-radius: 50%;
     background: var(--bg);
-    border: 1.5px solid var(--border-strong);
+    border: 1.5px solid var(--rule-strong);
     z-index: 2;
     pointer-events: none;
   }
-  /* Dashed "rip-here" line near the top */
+  /* Subtle dashed rip line below */
   .tag-zone::after {
     content: "";
     position: absolute;
     top: 38px; left: 8px; right: 8px;
     height: 1px;
-    background-image: linear-gradient(90deg, var(--border-strong) 50%, transparent 50%);
+    background-image: linear-gradient(90deg, var(--rule-strong) 50%, transparent 50%);
     background-size: 6px 1px;
+    opacity: 0.7;
     z-index: 2;
     pointer-events: none;
-    opacity: 0.5;
   }
-
-  .tag-zone:active { transform: scale(0.99); }
-  .tag-zone.has-image { border-color: var(--teal); }
   .tag-zone.has-image::before, .tag-zone.has-image::after { display: none; }
 
   .tag-placeholder {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 12px;
-    color: var(--text-dim);
+    gap: 14px;
+    color: var(--ink-2);
     pointer-events: none;
     padding: 16px;
     text-align: center;
   }
   .tag-icon {
-    width: 50px; height: 50px;
+    width: 56px; height: 56px;
     border-radius: 50%;
-    background: rgba(63,255,162,0.08);
-    border: 1px solid rgba(63,255,162,0.2);
+    background: var(--coral-soft);
     display: grid; place-items: center;
   }
-  .tag-icon svg { width: 22px; height: 22px; color: var(--teal); }
-  .tag-placeholder .ph-title { font-size: 14px; font-weight: 600; color: var(--text); letter-spacing: -0.2px; }
+  .tag-icon svg { width: 24px; height: 24px; color: var(--coral); }
+  .tag-placeholder .ph-title {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 400;
+    color: var(--ink);
+    letter-spacing: -0.3px;
+    line-height: 1;
+  }
   .tag-placeholder .ph-sub {
-    font-size: 11px; color: var(--text-dim);
+    font-size: 11px; color: var(--ink-3);
     font-family: var(--font-mono);
-    letter-spacing: 0.3px;
+    letter-spacing: 0.4px;
     text-transform: uppercase;
+    margin-top: -2px;
   }
 
   /* Scan grid (after capture) */
   .scan-grid-wrap {
     width: 100%;
-    border-radius: 14px;
+    border-radius: var(--radius);
     background: var(--surface);
-    border: 1px solid var(--teal);
+    border: 1.5px solid var(--coral);
     overflow: hidden;
     position: relative;
-    box-shadow: 0 0 20px -8px var(--teal-glow);
+    box-shadow: 0 6px 22px -10px var(--coral-glow);
   }
   .scan-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 1px;
-    background: var(--bg);
+    background: var(--surface-warm);
     padding: 1px;
   }
   .scan-grid img {
     width: 100%;
     aspect-ratio: 1;
     object-fit: cover;
-    background: #111;
+    background: #f0e8d4;
   }
   .scan-grid-bar {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px 12px;
+    padding: 11px 14px;
     background: var(--surface);
-    border-top: 1px solid var(--border);
+    border-top: 1px solid var(--rule);
     font-family: var(--font-mono);
     font-size: 10.5px;
-    color: var(--text-dim);
+    color: var(--ink-2);
     letter-spacing: 0.4px;
   }
   .scan-grid-bar .meta { display: flex; align-items: center; gap: 8px; }
-  .scan-grid-bar strong { color: var(--teal); font-weight: 700; }
+  .scan-grid-bar strong { color: var(--coral); font-weight: 700; }
   .scan-grid-bar .actions { display: flex; gap: 6px; }
   .pill-btn {
-    background: var(--surface-2);
-    border: 1px solid var(--border);
-    color: var(--text);
-    padding: 5px 10px;
+    background: var(--surface-warm);
+    border: 1px solid var(--rule-strong);
+    color: var(--ink);
+    padding: 5px 11px;
     border-radius: 6px;
     font-family: var(--font-mono);
     font-size: 10px;
@@ -479,7 +460,7 @@
     text-transform: uppercase;
   }
   .pill-btn:active { transform: scale(0.95); }
-  .pill-btn.danger { color: var(--error); border-color: rgba(248,113,113,0.3); }
+  .pill-btn.danger { color: var(--error); border-color: rgba(201,57,34,0.3); background: #fbe9e6; }
 
   /* Pile preview */
   .tag-zone img.preview-img {
@@ -490,7 +471,7 @@
   .upload-overlay {
     position: absolute;
     inset: auto 0 0 0;
-    padding: 10px 14px;
+    padding: 12px 14px;
     background: linear-gradient(to top, rgba(0,0,0,0.85), transparent);
     color: white;
     font-size: 11px;
@@ -502,9 +483,9 @@
     align-items: center;
   }
   .retake {
-    background: rgba(255,255,255,0.12);
+    background: rgba(255,255,255,0.18);
     backdrop-filter: blur(10px);
-    border: 1px solid rgba(255,255,255,0.18);
+    border: 1px solid rgba(255,255,255,0.22);
     color: white;
     padding: 5px 10px;
     border-radius: 6px;
@@ -517,20 +498,21 @@
 
   .file-input { display: none; }
 
-  /* ================== FLIGHT INFO (collapsible) ================== */
+  /* ====== Flight info (collapsible) ====== */
   .flight-card {
-    border-radius: 14px;
+    border-radius: var(--radius);
     background: var(--surface);
-    border: 1px solid var(--border);
+    border: 1px solid var(--rule);
     overflow: hidden;
-    transition: border-color 0.2s;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    box-shadow: 0 1px 2px rgba(26,31,46,0.04);
   }
-  .flight-card.has-data { border-color: rgba(63,255,162,0.3); }
+  .flight-card.has-data { border-color: var(--coral); box-shadow: 0 4px 14px -6px var(--coral-glow); }
   .flight-toggle {
     width: 100%;
     background: none;
     border: none;
-    color: var(--text);
+    color: var(--ink);
     font-family: var(--font-sans);
     text-align: left;
     padding: 14px 16px;
@@ -540,28 +522,28 @@
     cursor: pointer;
   }
   .flight-toggle .plus {
-    width: 24px; height: 24px;
-    border-radius: 6px;
-    background: rgba(63,255,162,0.1);
-    color: var(--teal);
+    width: 26px; height: 26px;
+    border-radius: 7px;
+    background: var(--coral-soft);
+    color: var(--coral);
     display: grid; place-items: center;
-    font-size: 16px;
+    font-size: 17px;
     font-weight: 600;
     transition: transform 0.25s;
   }
   .flight-card.open .flight-toggle .plus { transform: rotate(45deg); }
   .flight-toggle .ttl {
-    font-size: 13px; font-weight: 600; letter-spacing: -0.1px;
+    font-size: 14px; font-weight: 600; letter-spacing: -0.1px;
   }
   .flight-toggle .sub {
     margin-left: auto;
     font-family: var(--font-mono);
     font-size: 10px;
-    color: var(--text-faint);
-    letter-spacing: 0.4px;
+    color: var(--ink-3);
+    letter-spacing: 0.5px;
     text-transform: uppercase;
   }
-  .flight-card.has-data .flight-toggle .sub { color: var(--teal); }
+  .flight-card.has-data .flight-toggle .sub { color: var(--coral); }
   .flight-body {
     display: none;
     padding: 4px 14px 16px;
@@ -575,60 +557,58 @@
     grid-template-columns: 1fr 1fr 90px;
     gap: 8px;
   }
-  .field {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
+  .field { display: flex; flex-direction: column; gap: 4px; }
   .field label {
     font-family: var(--font-mono);
     font-size: 9.5px;
-    color: var(--text-faint);
-    letter-spacing: 0.6px;
+    color: var(--ink-3);
+    letter-spacing: 0.7px;
     text-transform: uppercase;
   }
   .field input {
-    background: var(--bg);
-    border: 1px solid var(--border);
+    background: var(--surface-warm);
+    border: 1px solid var(--rule);
     border-radius: 8px;
-    padding: 10px 11px;
-    color: var(--text);
+    padding: 11px;
+    color: var(--ink);
     font-family: var(--font-mono);
-    font-size: 12.5px;
+    font-size: 13px;
     font-weight: 500;
     letter-spacing: 0.3px;
     outline: none;
     text-transform: uppercase;
+    transition: border-color 0.15s;
   }
-  .field input::placeholder { color: var(--text-faint); text-transform: none; letter-spacing: 0; }
-  .field input:focus { border-color: var(--teal); }
+  .field input::placeholder { color: var(--ink-3); text-transform: none; letter-spacing: 0; }
+  .field input:focus { border-color: var(--coral); background: var(--surface); }
 
-  /* ================== FIND BUTTON ================== */
+  /* ====== Find button ====== */
   .find-btn {
-    margin-top: 4px;
+    margin-top: 6px;
     width: 100%;
-    padding: 18px;
-    border-radius: 14px;
+    padding: 19px;
+    border-radius: var(--radius);
     border: none;
-    background: linear-gradient(180deg, var(--teal) 0%, var(--teal-deep) 100%);
-    color: #06311b;
+    background: var(--coral);
+    color: #ffffff;
     font-family: var(--font-mono);
     font-size: 13px;
     font-weight: 700;
     letter-spacing: 1.5px;
     text-transform: uppercase;
     cursor: pointer;
-    transition: transform 0.15s, opacity 0.2s;
+    transition: transform 0.15s, background 0.2s;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 10px;
-    box-shadow: 0 12px 28px -10px var(--teal-glow), inset 0 1px 0 rgba(255,255,255,0.4);
+    box-shadow: 0 14px 30px -10px var(--coral-glow), inset 0 1px 0 rgba(255,255,255,0.25);
   }
+  .find-btn:hover:not(:disabled) { background: var(--coral-deep); }
   .find-btn:active:not(:disabled) { transform: scale(0.98); }
   .find-btn:disabled {
-    background: var(--surface-2);
-    color: var(--text-faint);
+    background: var(--surface-warm);
+    color: var(--ink-3);
     box-shadow: none;
     cursor: not-allowed;
   }
@@ -636,7 +616,7 @@
 
   .footer-hint {
     text-align: center;
-    color: var(--text-faint);
+    color: var(--ink-3);
     font-family: var(--font-mono);
     font-size: 10px;
     letter-spacing: 0.5px;
@@ -644,7 +624,7 @@
     text-transform: uppercase;
   }
 
-  /* Runway-marker bottom decoration */
+  /* Runway markers — now in warm tones */
   .runway {
     margin-top: 14px;
     padding: 0 4px;
@@ -656,8 +636,8 @@
     flex: 1;
     height: 2px;
     background-image: repeating-linear-gradient(90deg,
-      var(--text-faint) 0 14px, transparent 14px 22px);
-    opacity: 0.45;
+      var(--rule-strong) 0 14px, transparent 14px 22px);
+    opacity: 0.7;
   }
   .runway-code {
     display: inline-flex;
@@ -665,17 +645,13 @@
     gap: 6px;
     font-family: var(--font-mono);
     font-size: 9.5px;
-    color: var(--text-faint);
+    color: var(--ink-3);
     letter-spacing: 1.4px;
     text-transform: uppercase;
   }
-  .runway-code .arrow-glyph {
-    color: var(--teal);
-    font-size: 11px;
-    line-height: 1;
-  }
+  .runway-code .arrow-glyph { color: var(--coral); font-size: 11px; line-height: 1; }
 
-  /* ================== TOAST ================== */
+  /* ====== Toast ====== */
   .error-toast {
     position: fixed;
     top: calc(env(safe-area-inset-top) + 12px);
@@ -691,18 +667,18 @@
     letter-spacing: 0.3px;
     z-index: 300;
     transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-    box-shadow: 0 14px 32px rgba(248,113,113,0.4);
+    box-shadow: 0 14px 32px rgba(201,57,34,0.4);
     max-width: 360px;
     text-align: center;
   }
   .error-toast.show { transform: translateX(-50%) translateY(0); }
 
-  /* ================== LOADING (radar sweep) ================== */
+  /* ====== Loading (radar in warm coral) ====== */
   .loading-screen {
     position: fixed;
     inset: 0;
     background:
-      radial-gradient(ellipse at center, rgba(63,255,162,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse at center, var(--coral-soft) 0%, transparent 60%),
       var(--bg);
     z-index: 50;
     display: none;
@@ -719,11 +695,11 @@
     width: 160px; height: 160px;
     border-radius: 50%;
     background:
-      radial-gradient(circle at center, transparent 30%, rgba(63,255,162,0.04) 31%, transparent 32%),
-      radial-gradient(circle at center, transparent 60%, rgba(63,255,162,0.04) 61%, transparent 62%),
-      radial-gradient(circle at center, transparent 90%, rgba(63,255,162,0.04) 91%, transparent 92%);
-    border: 1px solid rgba(63,255,162,0.2);
-    box-shadow: inset 0 0 60px rgba(63,255,162,0.06), 0 0 60px rgba(63,255,162,0.08);
+      radial-gradient(circle at center, transparent 30%, rgba(245,75,42,0.06) 31%, transparent 32%),
+      radial-gradient(circle at center, transparent 60%, rgba(245,75,42,0.06) 61%, transparent 62%),
+      radial-gradient(circle at center, transparent 90%, rgba(245,75,42,0.06) 91%, transparent 92%);
+    border: 1px solid rgba(245,75,42,0.25);
+    box-shadow: inset 0 0 60px rgba(245,75,42,0.08), 0 0 60px rgba(245,75,42,0.1);
     overflow: hidden;
   }
   .radar::before {
@@ -731,7 +707,8 @@
     position: absolute;
     top: 0; left: 50%;
     width: 50%; height: 100%;
-    background: linear-gradient(90deg, transparent 0%, rgba(63,255,162,0.4) 100%);
+    background: linear-gradient(90deg, transparent 0%, var(--coral) 100%);
+    opacity: 0.5;
     transform-origin: left center;
     animation: sweep 2.4s linear infinite;
     filter: blur(2px);
@@ -743,48 +720,43 @@
     width: 12px; height: 12px;
     margin: -6px;
     border-radius: 50%;
-    background: var(--teal);
-    box-shadow: 0 0 20px var(--teal);
+    background: var(--coral);
+    box-shadow: 0 0 20px var(--coral);
   }
-  .radar .crosshair {
-    position: absolute;
-    inset: 0;
-  }
+  .radar .crosshair { position: absolute; inset: 0; }
   .radar .crosshair::before, .radar .crosshair::after {
     content: "";
     position: absolute;
-    background: rgba(63,255,162,0.15);
+    background: rgba(245,75,42,0.18);
   }
-  .radar .crosshair::before {
-    top: 50%; left: 0; right: 0; height: 1px;
-  }
-  .radar .crosshair::after {
-    left: 50%; top: 0; bottom: 0; width: 1px;
-  }
+  .radar .crosshair::before { top: 50%; left: 0; right: 0; height: 1px; }
+  .radar .crosshair::after  { left: 50%; top: 0; bottom: 0; width: 1px; }
   @keyframes sweep {
     from { transform: rotate(0deg); }
     to   { transform: rotate(360deg); }
   }
 
-  .loading-text { text-align: center; max-width: 300px; }
+  .loading-text { text-align: center; max-width: 320px; }
   .loading-text h3 {
     font-family: var(--font-mono);
     font-size: 13px;
     font-weight: 600;
-    color: var(--teal);
+    color: var(--coral);
     letter-spacing: 2px;
     text-transform: uppercase;
     margin-bottom: 14px;
   }
   .loading-text p {
-    color: var(--text-dim);
-    font-size: 14px;
-    line-height: 1.4;
-    min-height: 20px;
+    font-family: var(--font-display);
+    color: var(--ink);
+    font-size: 22px;
+    font-style: italic;
+    line-height: 1.2;
+    min-height: 26px;
     transition: opacity 0.3s;
   }
 
-  /* ================== RESULT (BOARDING PASS) ================== */
+  /* ====== Result (boarding pass) ====== */
   .result-screen {
     position: fixed;
     inset: 0;
@@ -802,7 +774,7 @@
     width: 100%;
     max-width: 410px;
     margin: 0 auto;
-    padding: 14px 18px 28px;
+    padding: 14px 20px 28px;
     display: flex;
     flex-direction: column;
     gap: 16px;
@@ -815,11 +787,11 @@
     padding: 4px 0 6px;
   }
   .back-btn {
-    width: 36px; height: 36px;
+    width: 38px; height: 38px;
     border-radius: 50%;
     background: var(--surface);
-    border: 1px solid var(--border);
-    color: var(--text);
+    border: 1px solid var(--rule);
+    color: var(--ink);
     display: grid; place-items: center;
     cursor: pointer;
   }
@@ -828,36 +800,26 @@
   .result-title {
     font-family: var(--font-mono);
     font-size: 11px;
-    color: var(--text-dim);
+    color: var(--ink-3);
     letter-spacing: 1.5px;
     text-transform: uppercase;
   }
 
-  /* Boarding pass card */
+  /* Boarding pass card — card on cream paper */
   .pass {
-    --notch: 14px;
-    background: linear-gradient(180deg, #ffffff 0%, #f6f7fa 100%);
-    color: #0b1120;
-    border-radius: 18px;
+    background: var(--surface);
+    color: var(--ink);
+    border-radius: 20px;
     overflow: hidden;
     position: relative;
-    box-shadow: 0 24px 60px -20px rgba(0,0,0,0.5);
-    /* Perforated edge mid-card */
-    --pass-mask:
-      radial-gradient(circle var(--notch) at left center, transparent 98%, #000 100%),
-      radial-gradient(circle var(--notch) at right center, transparent 98%, #000 100%),
-      linear-gradient(#000, #000);
-    -webkit-mask-image:
-      radial-gradient(circle var(--notch) at 0% var(--perf-y, 70%), transparent 98%, #000 100%),
-      radial-gradient(circle var(--notch) at 100% var(--perf-y, 70%), transparent 98%, #000 100%);
-    -webkit-mask-composite: source-in;
-            mask-composite: intersect;
+    border: 1px solid var(--rule);
+    box-shadow: 0 24px 60px -20px rgba(26,31,46,0.18), 0 2px 6px rgba(26,31,46,0.06);
   }
 
   .pass-header {
-    background: linear-gradient(90deg, var(--teal-deep) 0%, var(--teal) 100%);
-    color: #06311b;
-    padding: 12px 18px;
+    background: linear-gradient(90deg, var(--coral) 0%, var(--coral-deep) 100%);
+    color: #ffffff;
+    padding: 14px 18px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -870,19 +832,19 @@
   .pass-header .pass-brand {
     display: flex; align-items: center; gap: 8px;
   }
-  .pass-header .pass-brand svg { width: 13px; height: 13px; }
+  .pass-header .pass-brand svg { width: 14px; height: 14px; }
   .pass-status {
     display: inline-flex; align-items: center; gap: 5px;
-    background: rgba(11,17,32,0.18);
-    padding: 3px 8px;
-    border-radius: 4px;
+    background: rgba(255,255,255,0.22);
+    padding: 4px 9px;
+    border-radius: 5px;
     font-size: 10px;
   }
-  .pass-status.high   { background: rgba(11,17,32,0.22); }
-  .pass-status.medium { background: rgba(255,255,255,0.32); color: #5a3c00; }
-  .pass-status.low    { background: rgba(248,113,113,0.85); color: white; }
+  .pass-status.high   { background: rgba(255,255,255,0.25); }
+  .pass-status.medium { background: var(--amber); color: #2a1c00; }
+  .pass-status.low    { background: var(--ink); color: #ffffff; }
 
-  .pass-body { padding: 18px 18px 4px; display: flex; flex-direction: column; gap: 14px; }
+  .pass-body { padding: 20px 20px 4px; display: flex; flex-direction: column; gap: 16px; }
 
   .pass-route {
     display: grid;
@@ -895,57 +857,44 @@
   .pass-route .label {
     font-family: var(--font-mono);
     font-size: 9.5px;
-    color: #6b7384;
+    color: var(--ink-3);
     letter-spacing: 0.8px;
     text-transform: uppercase;
   }
   .pass-route .code {
-    font-family: var(--font-mono);
-    font-size: 32px;
-    font-weight: 700;
-    line-height: 1;
-    letter-spacing: -0.5px;
-    color: #0b1120;
+    font-family: var(--font-display);
+    font-size: 42px;
+    font-weight: 400;
+    line-height: 0.95;
+    letter-spacing: -1px;
+    color: var(--ink);
   }
   .pass-route .desc {
     font-family: var(--font-mono);
     font-size: 10px;
-    color: #6b7384;
+    color: var(--ink-3);
     letter-spacing: 0.4px;
     text-transform: uppercase;
   }
   .pass-route .arrow {
     width: 36px;
-    height: 1px;
-    background: #d2d6dd;
     position: relative;
-  }
-  .pass-route .arrow::after {
-    content: "";
-    position: absolute;
-    right: -1px; top: 50%;
-    width: 7px; height: 7px;
-    border-top: 1px solid #d2d6dd;
-    border-right: 1px solid #d2d6dd;
-    transform: translateY(-50%) rotate(45deg);
+    text-align: center;
   }
   .pass-route .arrow svg {
-    position: absolute;
-    top: -10px; left: 50%;
-    transform: translateX(-50%);
-    width: 16px; height: 16px;
-    color: var(--teal-deep);
+    width: 28px; height: 28px;
+    color: var(--coral);
   }
 
-  /* ===== Annotated pile image with spotlight ===== */
+  /* Annotated pile image with spotlight */
   .annotated {
     --cx: 50%;
     --cy: 50%;
     --rx: 12%;
     --ry: 18%;
-    --acc: var(--teal);
+    --acc: var(--coral);
     position: relative;
-    border-radius: 12px;
+    border-radius: 14px;
     overflow: hidden;
     background: #000;
     aspect-ratio: 16/10;
@@ -955,7 +904,7 @@
   }
   .spotlight-mask {
     position: absolute; inset: 0;
-    background: rgba(11,17,32,0.62);
+    background: rgba(26,31,46,0.62);
     -webkit-mask: radial-gradient(ellipse var(--rx) var(--ry) at var(--cx) var(--cy),
                   transparent 50%, rgba(0,0,0,0.4) 75%, black 100%);
             mask: radial-gradient(ellipse var(--rx) var(--ry) at var(--cx) var(--cy),
@@ -972,9 +921,7 @@
     border: 2px solid var(--acc);
     transform: translate(-50%, -50%);
     pointer-events: none;
-    box-shadow:
-      0 0 24px var(--acc),
-      inset 0 0 16px color-mix(in srgb, var(--acc) 25%, transparent);
+    box-shadow: 0 0 24px var(--acc), inset 0 0 16px color-mix(in srgb, var(--acc) 25%, transparent);
     animation: ringPulse 2s ease-in-out infinite;
   }
   .spotlight-ring-outer {
@@ -999,9 +946,9 @@
     from { transform: translate(-50%, -50%) rotate(0deg); }
     to   { transform: translate(-50%, -50%) rotate(360deg); }
   }
-  .annotated.high   { --acc: #3fffa2; }
-  .annotated.medium { --acc: #fbbf24; }
-  .annotated.low    { --acc: #fb923c; }
+  .annotated.high   { --acc: #1a8b4d; }
+  .annotated.medium { --acc: #d68900; }
+  .annotated.low    { --acc: #f54b2a; }
 
   .annotated-label {
     position: absolute;
@@ -1028,9 +975,9 @@
     background: rgba(255,255,255,0.25);
   }
   .annotated-label .arrow svg { width: 8px; height: 8px; }
-  .annotated.high   .annotated-label { background: #3fffa2; color: #06311b; border-color: #06311b; }
-  .annotated.medium .annotated-label { background: #fbbf24; color: #2a1c00; border-color: #2a1c00; }
-  .annotated.low    .annotated-label { background: #fb923c; color: #2a1100; border-color: #2a1100; }
+  .annotated.high   .annotated-label { background: #1a8b4d; color: #f0fbf5; border-color: #0c4f2a; }
+  .annotated.medium .annotated-label { background: #d68900; color: #2a1c00; border-color: #4d3500; }
+  .annotated.low    .annotated-label { background: #f54b2a; color: #ffffff; border-color: #5a1a0c; }
   .annotated-label::after {
     content: "";
     position: absolute;
@@ -1043,13 +990,16 @@
   .annotated-label.below::after { top: 100%; height: var(--connector-len, 28px); }
   .annotated-label.above::after { bottom: 100%; height: var(--connector-len, 28px); }
 
-  .annotated.no-bbox .spotlight-svg, .annotated.no-bbox .annotated-label { display: none; }
+  .annotated.no-bbox .spotlight-mask,
+  .annotated.no-bbox .spotlight-ring,
+  .annotated.no-bbox .spotlight-ring-outer,
+  .annotated.no-bbox .annotated-label { display: none; }
   .annotated.no-bbox::after {
     content: "LOCATION UNCERTAIN — SEE NOTES";
     position: absolute;
     bottom: 10px; left: 50%;
     transform: translateX(-50%);
-    background: rgba(11,17,32,0.85);
+    background: rgba(26,31,46,0.85);
     backdrop-filter: blur(6px);
     color: var(--amber);
     padding: 5px 11px;
@@ -1058,15 +1008,15 @@
     font-size: 10px;
     font-weight: 700;
     letter-spacing: 0.7px;
-    border: 1px solid rgba(251,191,36,0.4);
+    border: 1px solid rgba(214,137,0,0.5);
   }
 
-  /* ===== "Not found" state — distinct card ===== */
+  /* "Not found" state */
   .not-found-card {
-    background: var(--surface);
-    border: 1px solid rgba(248,113,113,0.4);
-    border-radius: 14px;
-    padding: 24px 20px;
+    background: #fef5f3;
+    border: 1px solid var(--coral);
+    border-radius: 16px;
+    padding: 26px 22px;
     text-align: center;
     display: flex;
     flex-direction: column;
@@ -1074,31 +1024,33 @@
     gap: 14px;
   }
   .not-found-icon {
-    width: 56px; height: 56px;
+    width: 60px; height: 60px;
     border-radius: 50%;
-    background: rgba(248,113,113,0.1);
-    border: 1px solid rgba(248,113,113,0.3);
+    background: var(--coral-soft);
+    border: 1px solid var(--coral);
     display: grid; place-items: center;
-    color: var(--error);
+    color: var(--coral);
   }
-  .not-found-icon svg { width: 26px; height: 26px; }
+  .not-found-icon svg { width: 28px; height: 28px; }
   .not-found-card h3 {
-    font-size: 18px;
-    font-weight: 700;
-    letter-spacing: -0.3px;
+    font-family: var(--font-display);
+    font-size: 26px;
+    font-weight: 400;
+    letter-spacing: -0.5px;
+    color: var(--ink);
   }
   .not-found-card p {
-    color: var(--text-dim);
-    font-size: 13px;
+    color: var(--ink-2);
+    font-size: 14px;
     line-height: 1.5;
-    max-width: 280px;
+    max-width: 290px;
   }
   .not-found-tips {
     width: 100%;
     margin-top: 6px;
     padding: 14px;
-    background: var(--bg);
-    border: 1px solid var(--border);
+    background: var(--surface);
+    border: 1px solid var(--rule);
     border-radius: 10px;
     text-align: left;
     display: flex;
@@ -1110,15 +1062,15 @@
     gap: 10px;
     align-items: flex-start;
     font-size: 13px;
-    color: var(--text);
+    color: var(--ink);
     line-height: 1.4;
   }
   .not-found-tips .tip-num {
     flex-shrink: 0;
-    width: 20px; height: 20px;
+    width: 22px; height: 22px;
     border-radius: 50%;
-    background: rgba(63,255,162,0.1);
-    color: var(--teal);
+    background: var(--coral-soft);
+    color: var(--coral);
     font-family: var(--font-mono);
     font-size: 10px;
     font-weight: 700;
@@ -1126,7 +1078,6 @@
     margin-top: 1px;
   }
 
-  /* Hide irrelevant sections when in not-found mode */
   .pass.not-found .pass-route,
   .pass.not-found .annotated,
   .pass.not-found .pass-section.location,
@@ -1134,38 +1085,42 @@
   .pass.not-found #resNotesSection { display: none; }
 
   .pass-section {
-    border-top: 1px dashed #d2d6dd;
-    padding-top: 12px;
+    border-top: 1px dashed var(--rule-strong);
+    padding-top: 14px;
   }
   .pass-section h4 {
     font-family: var(--font-mono);
     font-size: 9.5px;
-    color: #6b7384;
+    color: var(--ink-3);
     letter-spacing: 0.9px;
     text-transform: uppercase;
-    margin-bottom: 6px;
+    margin-bottom: 8px;
   }
   .pass-section p, .pass-section li {
-    color: #1d2233;
-    font-size: 13.5px;
+    color: var(--ink);
+    font-size: 14px;
     line-height: 1.5;
   }
-  .pass-section ul { padding-left: 16px; display: flex; flex-direction: column; gap: 3px; }
-  .pass-section.location p { font-weight: 700; letter-spacing: -0.1px; }
+  .pass-section ul { padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
+  .pass-section.location p {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 400;
+    letter-spacing: -0.4px;
+    line-height: 1.2;
+  }
 
   .pass-meta-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
-    padding: 10px 0 0;
+    gap: 12px;
+    padding: 12px 0 0;
   }
-  .pass-meta {
-    display: flex; flex-direction: column; gap: 3px;
-  }
+  .pass-meta { display: flex; flex-direction: column; gap: 4px; }
   .pass-meta .label {
     font-family: var(--font-mono);
     font-size: 9px;
-    color: #6b7384;
+    color: var(--ink-3);
     letter-spacing: 0.7px;
     text-transform: uppercase;
   }
@@ -1173,17 +1128,17 @@
     font-family: var(--font-mono);
     font-size: 13px;
     font-weight: 600;
-    color: #0b1120;
+    color: var(--ink);
     letter-spacing: 0.2px;
   }
 
-  /* Perforated stub */
+  /* Perforated divider */
   .pass-perf {
     position: relative;
     height: 18px;
     background:
-      repeating-linear-gradient(90deg, #d2d6dd 0 6px, transparent 6px 12px) center / 100% 1px no-repeat;
-    margin: 0 12px;
+      repeating-linear-gradient(90deg, var(--rule-strong) 0 6px, transparent 6px 12px) center / 100% 1px no-repeat;
+    margin: 0 14px;
   }
   .pass-perf::before, .pass-perf::after {
     content: "";
@@ -1198,19 +1153,17 @@
   .pass-perf::after  { right: -22px; }
 
   .pass-stub {
-    padding: 14px 18px 18px;
+    padding: 16px 20px 20px;
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 10px;
   }
-  .pass-stub .stub-meta {
-    display: flex; flex-direction: column; gap: 2px;
-  }
+  .pass-stub .stub-meta { display: flex; flex-direction: column; gap: 2px; }
   .pass-stub .stub-meta .label {
     font-family: var(--font-mono);
     font-size: 9px;
-    color: #6b7384;
+    color: var(--ink-3);
     letter-spacing: 0.7px;
     text-transform: uppercase;
   }
@@ -1218,20 +1171,19 @@
     font-family: var(--font-mono);
     font-size: 13px;
     font-weight: 700;
-    color: #0b1120;
+    color: var(--ink);
   }
   .pass-stub .barcode {
     flex: 1;
     height: 38px;
     background: repeating-linear-gradient(90deg,
-      #0b1120 0 1px, transparent 1px 3px,
-      #0b1120 3px 5px, transparent 5px 6px,
-      #0b1120 6px 8px, transparent 8px 11px);
-    margin: 0 8px;
+      var(--ink) 0 1px, transparent 1px 3px,
+      var(--ink) 3px 5px, transparent 5px 6px,
+      var(--ink) 6px 8px, transparent 8px 11px);
+    margin: 0 10px;
     align-self: center;
   }
 
-  /* Reference grid (small) */
   .ref-thumbs {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -1242,8 +1194,8 @@
     width: 100%;
     aspect-ratio: 1;
     object-fit: cover;
-    border-radius: 5px;
-    background: #111;
+    border-radius: 6px;
+    background: var(--surface-warm);
   }
 
   .result-actions {
@@ -1254,9 +1206,9 @@
     flex: 1;
     padding: 14px;
     border-radius: 12px;
-    border: 1px solid var(--border);
+    border: 1px solid var(--rule);
     background: var(--surface);
-    color: var(--text);
+    color: var(--ink);
     font-family: var(--font-mono);
     font-size: 11.5px;
     font-weight: 700;
@@ -1271,17 +1223,17 @@
   .btn-secondary:active { transform: scale(0.98); }
   .btn-secondary svg { width: 13px; height: 13px; }
   .btn-secondary.primary {
-    background: var(--teal);
-    color: #06311b;
-    border-color: var(--teal);
+    background: var(--coral);
+    color: #ffffff;
+    border-color: var(--coral);
   }
 
-  /* ================== KEY MODAL ================== */
+  /* ====== Modal ====== */
   .modal-backdrop {
     position: fixed;
     inset: 0;
-    background: rgba(11,17,32,0.78);
-    backdrop-filter: blur(12px);
+    background: rgba(26,31,46,0.45);
+    backdrop-filter: blur(10px);
     z-index: 200;
     display: none;
     align-items: flex-end;
@@ -1292,9 +1244,9 @@
     width: 100%;
     max-width: 410px;
     background: var(--surface);
-    border-top: 1px solid var(--border);
+    border-top: 1px solid var(--rule);
     border-radius: 22px 22px 0 0;
-    padding: 24px 22px calc(22px + env(safe-area-inset-bottom));
+    padding: 26px 22px calc(22px + env(safe-area-inset-bottom));
     animation: slideUp 0.32s cubic-bezier(0.16, 1, 0.3, 1);
   }
   @keyframes slideUp {
@@ -1302,28 +1254,29 @@
     to   { transform: translateY(0); }
   }
   .modal h3 {
-    font-size: 18px; font-weight: 700; margin-bottom: 6px; letter-spacing: -0.4px;
+    font-family: var(--font-display);
+    font-size: 24px; font-weight: 400; margin-bottom: 6px; letter-spacing: -0.4px;
   }
   .modal p {
-    color: var(--text-dim);
-    font-size: 13px;
-    line-height: 1.5;
+    color: var(--ink-2);
+    font-size: 13.5px;
+    line-height: 1.55;
     margin-bottom: 16px;
   }
-  .modal a { color: var(--teal); text-decoration: none; font-weight: 600; }
+  .modal a { color: var(--coral); text-decoration: none; font-weight: 600; }
   .modal input {
     width: 100%;
     padding: 13px 14px;
     border-radius: 10px;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    color: var(--text);
+    background: var(--surface-warm);
+    border: 1px solid var(--rule);
+    color: var(--ink);
     font-size: 13px;
     font-family: var(--font-mono);
     margin-bottom: 12px;
     outline: none;
   }
-  .modal input:focus { border-color: var(--teal); }
+  .modal input:focus { border-color: var(--coral); background: var(--surface); }
   .modal-actions { display: flex; gap: 10px; }
   .modal-actions button {
     flex: 1;
@@ -1337,10 +1290,10 @@
     text-transform: uppercase;
     cursor: pointer;
   }
-  .modal-cancel { background: var(--surface-2); color: var(--text); }
-  .modal-save { background: var(--teal); color: #06311b; }
+  .modal-cancel { background: var(--surface-warm); color: var(--ink); border: 1px solid var(--rule); }
+  .modal-save { background: var(--coral); color: #ffffff; }
 
-  /* ================== CAMERA ================== */
+  /* ====== Camera (stays dark — natural for camera UI) ====== */
   .cam {
     position: fixed; inset: 0;
     background: #000;
@@ -1374,7 +1327,7 @@
   .cam-grant {
     position: absolute; inset: 0;
     display: grid; place-items: center;
-    color: var(--text-dim);
+    color: #b8c0d0;
     text-align: center;
     padding: 24px;
     font-family: var(--font-mono);
@@ -1398,9 +1351,9 @@
   .cam-icon-btn {
     width: 38px; height: 38px;
     border-radius: 50%;
-    background: rgba(11,17,32,0.6);
+    background: rgba(0,0,0,0.55);
     backdrop-filter: blur(10px);
-    border: 1px solid rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.14);
     color: white;
     display: grid; place-items: center;
     cursor: pointer;
@@ -1415,11 +1368,11 @@
     font-weight: 600;
     letter-spacing: 0.8px;
     text-transform: uppercase;
-    background: rgba(11,17,32,0.6);
+    background: rgba(0,0,0,0.55);
     backdrop-filter: blur(10px);
     padding: 8px 12px;
     border-radius: 999px;
-    border: 1px solid rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.14);
   }
 
   .cam-hint {
@@ -1427,7 +1380,7 @@
     top: calc(env(safe-area-inset-top) + 64px);
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(11,17,32,0.6);
+    background: rgba(0,0,0,0.55);
     backdrop-filter: blur(10px);
     color: white;
     font-family: var(--font-mono);
@@ -1436,7 +1389,7 @@
     letter-spacing: 0.4px;
     padding: 7px 13px;
     border-radius: 999px;
-    border: 1px solid rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.12);
     z-index: 9;
     max-width: 88%;
     text-align: center;
@@ -1451,11 +1404,11 @@
     display: flex;
     gap: 6px;
     z-index: 9;
-    background: rgba(11,17,32,0.6);
+    background: rgba(0,0,0,0.55);
     backdrop-filter: blur(10px);
     padding: 8px 12px;
     border-radius: 999px;
-    border: 1px solid rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.12);
   }
   .cam-progress .dot {
     width: 7px; height: 7px;
@@ -1463,7 +1416,7 @@
     background: rgba(255,255,255,0.3);
     transition: background 0.2s, transform 0.2s;
   }
-  .cam-progress .dot.filled { background: var(--teal); transform: scale(1.2); box-shadow: 0 0 6px var(--teal); }
+  .cam-progress .dot.filled { background: var(--coral); transform: scale(1.2); box-shadow: 0 0 6px var(--coral); }
   .cam-progress .label {
     color: white;
     font-family: var(--font-mono);
@@ -1489,7 +1442,7 @@
     width: 52px; height: 52px;
     border-radius: 8px;
     object-fit: cover;
-    border: 2px solid var(--teal);
+    border: 2px solid var(--coral);
     flex-shrink: 0;
   }
 
@@ -1520,16 +1473,16 @@
   .cam-text-btn:active { transform: scale(0.95); }
   .cam-text-btn[hidden] { display: none; }
   .cam-text-btn.left { text-align: left; }
-  .cam-text-btn.right { text-align: right; color: var(--teal); opacity: 1; }
+  .cam-text-btn.right { text-align: right; color: var(--coral); opacity: 1; }
 
   .cam-shutter {
-    width: 74px; height: 74px;
+    width: 76px; height: 76px;
     border-radius: 50%;
     background: white;
     border: 4px solid rgba(255,255,255,0.35);
     background-clip: padding-box;
     cursor: pointer;
-    box-shadow: 0 0 0 2.5px rgba(255,255,255,0.5) inset;
+    box-shadow: 0 0 0 2.5px rgba(255,255,255,0.55) inset;
     transition: transform 0.1s;
     justify-self: center;
   }
@@ -1540,7 +1493,7 @@
     border-radius: 999px;
     background: rgba(255,255,255,0.18);
     backdrop-filter: blur(10px);
-    border: 1px solid rgba(255,255,255,0.2);
+    border: 1px solid rgba(255,255,255,0.22);
     color: white;
     font-family: var(--font-mono);
     font-size: 11px;
@@ -1549,11 +1502,11 @@
     text-transform: uppercase;
     cursor: pointer;
   }
-  .cam-action-pill.primary { background: var(--teal); color: #06311b; border-color: var(--teal); }
+  .cam-action-pill.primary { background: var(--coral); color: #ffffff; border-color: var(--coral); }
   .cam-action-pill:active { transform: scale(0.96); }
 
   button:focus-visible, a:focus-visible, input:focus-visible {
-    outline: 2px solid var(--teal);
+    outline: 2px solid var(--coral);
     outline-offset: 2px;
   }
 </style>
@@ -1564,14 +1517,17 @@
   <div class="top-stripe"></div>
   <header>
     <div class="brand">
-      <div class="logo">
-        <!-- Plane (taking off, banking left) — instant aviation cue -->
-        <svg viewBox="0 0 24 24" fill="currentColor">
-          <path d="M21 16v-2l-8-5V3.5C13 2.67 12.33 2 11.5 2S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/>
+      <div class="logo" aria-hidden="true">
+        <!-- Luggage tag with string hole + a "spot" -->
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 4h6a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/>
+          <circle cx="12" cy="7" r="0.9" fill="currentColor"/>
+          <circle cx="12" cy="14" r="2.6" stroke-width="2"/>
+          <circle cx="12" cy="14" r="0.7" fill="currentColor" stroke="none"/>
         </svg>
       </div>
       <div class="brand-text">
-        <span class="brand-name">SpotMyBag</span>
+        <span class="brand-name">Spot<em>My</em>Bag</span>
         <span class="brand-tag">Baggage Locator</span>
       </div>
     </div>
@@ -1599,17 +1555,9 @@
     </div>
 
     <div class="hero">
-      <div class="hero-plane" aria-hidden="true">
-        <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-          <!-- Plane silhouette (top-down, banking) -->
-          <path d="M50 8 L52 38 L92 56 L92 62 L52 50 L52 72 L60 80 L60 84 L50 80 L40 84 L40 80 L48 72 L48 50 L8 62 L8 56 L48 38 Z"/>
-          <!-- Vapor trail dashes -->
-          <path d="M50 90 L50 96" stroke-dasharray="2 3" opacity="0.6"/>
-        </svg>
-      </div>
-      <div class="hero-trail"></div>
-      <div class="kicker">▲ AI Baggage Tracking</div>
-      <h2>Find your bag<br/><span class="glow">on the tarmac.</span></h2>
+      <div class="hero-rule"></div>
+      <div class="kicker">AI Baggage Tracking</div>
+      <h2>Find your bag <em>on the tarmac.</em></h2>
       <p>Scan it from every angle, snap the pile, and let computer vision pinpoint exactly where yours is sitting.</p>
     </div>
 
@@ -1701,7 +1649,6 @@
 
 <div class="error-toast" id="toast"></div>
 
-<!-- Loading -->
 <div class="loading-screen" id="loading">
   <div class="radar"><div class="crosshair"></div></div>
   <div class="loading-text">
@@ -1710,7 +1657,6 @@
   </div>
 </div>
 
-<!-- Result (boarding pass style) -->
 <div class="result-screen" id="result">
   <div class="result-inner">
     <div class="result-header">
@@ -1720,14 +1666,15 @@
         </svg>
       </button>
       <span class="result-title">SEARCH RESULT</span>
-      <div style="width: 36px;"></div>
+      <div style="width: 38px;"></div>
     </div>
 
     <div class="pass" id="pass">
       <div class="pass-header">
         <span class="pass-brand">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 4h6a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/>
+            <circle cx="12" cy="14" r="2.6"/>
           </svg>
           SpotMyBag
         </span>
@@ -1742,7 +1689,7 @@
             <span class="desc" id="routeFrom">Your bag</span>
           </div>
           <div class="arrow">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M2 12h20M12 2l10 10-10 10"/>
             </svg>
           </div>
@@ -1850,7 +1797,6 @@
   </div>
 </div>
 
-<!-- Key modal -->
 <div class="modal-backdrop" id="keyModal">
   <div class="modal">
     <h3>Use your own xAI key (optional)</h3>
@@ -1863,7 +1809,6 @@
   </div>
 </div>
 
-<!-- Camera -->
 <div class="cam" id="cam" aria-hidden="true">
   <div class="cam-top">
     <button class="cam-icon-btn" id="camClose" aria-label="Close">
@@ -1934,7 +1879,6 @@
     toastTimer = setTimeout(() => t.classList.remove("show"), 3200);
   };
 
-  // ============== Status strip ==============
   const setStatus = (val, ticker = "") => {
     $("sysStatus").textContent = val;
     $("sysTicker").textContent = ticker || "— GROK VISION ONLINE";
@@ -2135,6 +2079,13 @@
     $("flightNo").value = state.flight.flightNo || "";
     $("flightArrival").value = state.flight.arrival || "";
   }
+  const collectFlight = () => {
+    const airline = $("flightAirline").value.trim().slice(0, 60);
+    const flightNo = $("flightNo").value.trim().toUpperCase().slice(0, 12);
+    const arrival = $("flightArrival").value.trim().toUpperCase().slice(0, 4);
+    if (!airline && !flightNo && !arrival) return null;
+    return { airline, flightNo, arrival };
+  };
   const updateFlightSub = () => {
     const f = collectFlight();
     if (f) {
@@ -2144,13 +2095,6 @@
       flightCard.classList.remove("has-data");
       flightSub.textContent = "OPTIONAL";
     }
-  };
-  const collectFlight = () => {
-    const airline = $("flightAirline").value.trim().slice(0, 60);
-    const flightNo = $("flightNo").value.trim().toUpperCase().slice(0, 12);
-    const arrival = $("flightArrival").value.trim().toUpperCase().slice(0, 4);
-    if (!airline && !flightNo && !arrival) return null;
-    return { airline, flightNo, arrival };
   };
   fields.forEach((id) => {
     $(id).addEventListener("input", () => {
@@ -2162,7 +2106,7 @@
   });
   updateFlightSub();
 
-  // ============== In-app camera ==============
+  // ============== Camera ==============
   let camStream = null;
   let camFacing = "environment";
   let camSlot = null;
@@ -2321,7 +2265,6 @@
     const dataUrl = captureFrame();
     if (!dataUrl) return;
     flashShutter();
-
     if (camMode === "scan") {
       const c = await compressDataUrl(dataUrl);
       state.bag.push({ dataUrl: c.dataUrl, base64: stripDataUrl(c.dataUrl), mediaType: c.mediaType });
@@ -2382,12 +2325,12 @@
 
   // ============== Loading hints ==============
   const HINTS = [
-    "Reading your bag's features",
-    "Mapping the tarmac",
-    "Comparing colors and shapes",
-    "Looking for stickers and tags",
-    "Cross-checking handles and zippers",
-    "Locking on target",
+    "Reading your bag's features…",
+    "Mapping the tarmac…",
+    "Comparing colors and shapes…",
+    "Looking for stickers and tags…",
+    "Cross-checking handles and zippers…",
+    "Locking on target…",
   ];
   let hintTimer;
   const startHints = () => {
@@ -2442,7 +2385,6 @@ No markdown, no fences, no extra text.`;
       { type: "text", text: "Now find my bag in this airport tarmac pile:" },
       { type: "image_url", image_url: { url: state.pile.dataUrl, detail: "high" } },
     ];
-
     const res = await fetch("https://api.x.ai/v1/chat/completions", {
       method: "POST",
       headers: { "Content-Type": "application/json", "Authorization": `Bearer ${state.apiKey}` },
@@ -2454,7 +2396,6 @@ No markdown, no fences, no extra text.`;
         ],
       }),
     });
-
     if (!res.ok) {
       let msg = `Request failed (${res.status})`;
       try { const err = await res.json(); if (err?.error) msg = (typeof err.error === "string" ? err.error : err.error.message) || msg; } catch {}
@@ -2492,14 +2433,11 @@ No markdown, no fences, no extra text.`;
     return {
       location: String(obj.location || "—").trim(),
       matched: matched.map(s => String(s).trim()).filter(Boolean),
-      confidence,
-      notes: String(obj.notes || "").trim(),
-      bbox,
+      confidence, notes: String(obj.notes || "").trim(), bbox,
     };
   };
 
-  // ============== Render result (boarding pass) ==============
-  // Heuristic: did Grok essentially say "I couldn't find it"?
+  // ============== Result ==============
   const isNotFound = (result) => {
     if (result.confidence === "Low" && !result.bbox && result.matched.length === 0) return true;
     const text = (result.location + " " + result.notes).toLowerCase();
@@ -2516,7 +2454,6 @@ No markdown, no fences, no extra text.`;
     const wrap = $("annotated");
     const label = $("spotlightLabel");
     const cls = confidence === "High" ? "high" : confidence === "Medium" ? "medium" : "low";
-
     wrap.classList.remove("high", "medium", "low", "no-bbox");
     if (!bbox) {
       wrap.classList.add("no-bbox");
@@ -2524,22 +2461,16 @@ No markdown, no fences, no extra text.`;
       return;
     }
     wrap.classList.add(cls);
-
     const { x, y, w, h } = bbox;
-    // Add a small padding so the spotlight extends slightly beyond the bbox
-    const pad = 2; // % units
-    const cx = x + w / 2;
-    const cy = y + h / 2;
+    const pad = 2;
+    const cx = x + w / 2, cy = y + h / 2;
     const rx = Math.max(6, w / 2 + pad);
     const ry = Math.max(6, h / 2 + pad);
-
     wrap.style.setProperty("--cx", `${cx}%`);
     wrap.style.setProperty("--cy", `${cy}%`);
     wrap.style.setProperty("--rx", `${rx}%`);
     wrap.style.setProperty("--ry", `${ry}%`);
-
-    // Position the label outside the spotlight (above if there's room, otherwise below)
-    const { text, cls: lcls } = labelTextFor(confidence);
+    const { text } = labelTextFor(confidence);
     label.textContent = "";
     const arrow = document.createElement("span");
     arrow.className = "arrow";
@@ -2548,15 +2479,11 @@ No markdown, no fences, no extra text.`;
     txt.textContent = text;
     label.appendChild(txt);
     label.appendChild(arrow);
-
-    // Decide above or below
-    const labelBelow = (cy - ry) < 18; // not enough room above → put it below
-    const connectorLen = 22; // px
+    const labelBelow = (cy - ry) < 18;
+    const connectorLen = 22;
     label.style.setProperty("--connector-len", `${connectorLen}px`);
     label.classList.toggle("below", labelBelow);
     label.classList.toggle("above", !labelBelow);
-
-    // Position horizontally centered on cx, vertically just outside the spotlight
     label.style.left = `${cx}%`;
     if (labelBelow) {
       label.style.top = `calc(${cy + ry}% + ${connectorLen}px)`;
@@ -2566,21 +2493,15 @@ No markdown, no fences, no extra text.`;
       label.style.transform = "translate(-50%, -100%)";
     }
     label.hidden = false;
-    // Rotate arrow if label is above (point down toward bag) vs below (point up)
     arrow.style.transform = labelBelow ? "rotate(180deg)" : "none";
   };
 
-  const formatTime = (d) => {
-    const hh = String(d.getHours()).padStart(2, "0");
-    const mm = String(d.getMinutes()).padStart(2, "0");
-    return `${hh}:${mm}`;
-  };
+  const formatTime = (d) => `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
   const formatRef = (d) => {
     const y = d.getFullYear().toString().slice(2);
     const m = String(d.getMonth() + 1).padStart(2, "0");
     const day = String(d.getDate()).padStart(2, "0");
-    const seq = Math.floor(Math.random() * 9000) + 1000;
-    return { ref: `SMB-${y}${m}${day}`, seq: String(seq) };
+    return { ref: `SMB-${y}${m}${day}`, seq: String(Math.floor(Math.random() * 9000) + 1000) };
   };
 
   const renderResult = (result) => {
@@ -2592,20 +2513,14 @@ No markdown, no fences, no extra text.`;
 
     $("resultPileImg").src = state.pile.dataUrl;
     if (!notFound) renderSpotlight(result.bbox, result.confidence);
+    if (notFound) $("notFoundMsg").textContent = result.notes || "Grok couldn't confidently match your bag to anything in the tarmac photo.";
 
-    if (notFound) {
-      const reason = result.notes || "Grok couldn't confidently match your bag to anything in the tarmac photo.";
-      $("notFoundMsg").textContent = reason;
-    }
+    $("resultRefThumbs").innerHTML = state.bag.map(b => `<img src="${b.dataUrl}" alt="" />`).join("");
 
-    const refThumbs = $("resultRefThumbs");
-    refThumbs.innerHTML = state.bag.map(b => `<img src="${b.dataUrl}" alt="" />`).join("");
-
-    // Confidence badge
     const conf = result.confidence;
     const cls = conf === "High" ? "high" : conf === "Medium" ? "medium" : "low";
     let statusText;
-    if (notFound)            statusText = "NOT FOUND";
+    if (notFound)              statusText = "NOT FOUND";
     else if (conf === "High")   statusText = "CONFIRMED";
     else if (conf === "Medium") statusText = "PROBABLE";
     else                        statusText = "UNCERTAIN";
@@ -2616,20 +2531,14 @@ No markdown, no fences, no extra text.`;
     $("metaConfidence").textContent = conf.toUpperCase();
     $("metaTime").textContent = formatTime(now);
 
-    // Route arrival code (use flight arrival if present, else "PILE")
     const arrival = state.flight?.arrival || "";
     $("routeTo").textContent = arrival || "PILE";
     $("routeDesc").textContent = arrival ? "Arrival airport" : "Tarmac pile";
 
-    // Flight meta
-    if (state.flight?.flightNo) {
-      $("metaFlightWrap").hidden = false;
-      $("metaFlight").textContent = state.flight.flightNo;
-    } else { $("metaFlightWrap").hidden = true; }
-    if (state.flight?.arrival) {
-      $("metaArrivalWrap").hidden = false;
-      $("metaArrival").textContent = state.flight.arrival;
-    } else { $("metaArrivalWrap").hidden = true; }
+    if (state.flight?.flightNo) { $("metaFlightWrap").hidden = false; $("metaFlight").textContent = state.flight.flightNo; }
+    else $("metaFlightWrap").hidden = true;
+    if (state.flight?.arrival) { $("metaArrivalWrap").hidden = false; $("metaArrival").textContent = state.flight.arrival; }
+    else $("metaArrivalWrap").hidden = true;
 
     $("resLocation").textContent = result.location || "—";
 
@@ -2638,7 +2547,7 @@ No markdown, no fences, no extra text.`;
     if (result.matched.length === 0) {
       const li = document.createElement("li");
       li.textContent = "No specific features identified.";
-      li.style.color = "#6b7384";
+      li.style.color = "var(--ink-3)";
       ul.appendChild(li);
     } else {
       result.matched.forEach(m => {
@@ -2647,7 +2556,6 @@ No markdown, no fences, no extra text.`;
         ul.appendChild(li);
       });
     }
-
     if (result.notes) { $("resNotesSection").style.display = ""; $("resNotes").textContent = result.notes; }
     else { $("resNotesSection").style.display = "none"; }
 
@@ -2661,7 +2569,6 @@ No markdown, no fences, no extra text.`;
     setStatus("READY", "— SEARCH COMPLETE");
   };
 
-  // ============== Find ==============
   $("findBtn").addEventListener("click", async () => {
     if (state.bag.length === 0 || !state.pile) { showToast("Add bag scan and pile photo first."); return; }
     setStatus("ANALYZING", "— SCANNING TARMAC FOR YOUR BAG");
@@ -2719,15 +2626,12 @@ No markdown, no fences, no extra text.`;
     window.addEventListener("load", () => {
       navigator.serviceWorker.register("./sw.js").catch((err) => console.warn("SW registration failed:", err));
     });
-
-    // When a new service worker takes over, reload so the latest shell is shown.
     let alreadyReloaded = false;
     navigator.serviceWorker.addEventListener("controllerchange", () => {
       if (alreadyReloaded) return;
       alreadyReloaded = true;
       window.location.reload();
     });
-
     navigator.serviceWorker.addEventListener("message", (e) => {
       if (e.data?.type === "SW_UPDATED" && !alreadyReloaded) {
         alreadyReloaded = true;
@@ -2792,7 +2696,6 @@ No markdown, no fences, no extra text.`;
   if (isIOS && !isStandalone()) setTimeout(showInstallChip, 700);
   window.addEventListener("appinstalled", () => $("installChip")?.remove());
 
-  // Initial state
   updateFindBtn();
 })();
 </script>

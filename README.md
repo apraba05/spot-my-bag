@@ -52,14 +52,28 @@ Works in any modern mobile browser. Installable as a PWA from iOS Safari (Share 
 ## Stack
 
 - Pure vanilla **HTML / CSS / JS** — no framework, no build step
-- A single `index.html` (~80KB) for the entire client
+- A single `index.html` for the entire client
 - **Vercel Functions** (Node.js) for the xAI proxy
 - **Vercel Web Analytics** (anonymous pageviews)
-- **Inter** + **JetBrains Mono** via Google Fonts
+- **Instrument Serif** (display) + **DM Sans** (UI) + **IBM Plex Mono** (data) via Google Fonts
 - **PWA** — service worker + manifest for installable home-screen experience
 - **xAI Grok vision** (`grok-4-fast-non-reasoning`)
 
 No `package.json`. No node_modules. No bundler. Just files.
+
+## Design
+
+The visual identity is a vintage-travel × modern-app crossover:
+
+- **Cream paper background** (`#faf6ed`) with subtle warm grain — feels like a boarding pass under terminal lighting, not a generic dark tech app.
+- **Coral accent** (`#f54b2a`) for primary CTAs and the spotlight highlight — warm, inviting, distinctly non-tech.
+- **Deep navy ink** (`#1a1f2e`) for body text — high-contrast and editorial.
+- **Display type in italic serif** (Instrument Serif) for the hero and result location — magazine/luggage-tag feel.
+- **All "data" in mono** (IBM Plex Mono) — flight codes, status strip, step labels, boarding-pass meta — reinforces airline/airport context.
+- **Three-color top stripe** (coral → amber → navy) — classic airline brand stripe.
+- **Luggage-tag step cards** with a punch hole and dashed rip-line at the top.
+- **Boarding-pass result card** with a colored header strip, perforated mid-card divider, and a barcoded stub.
+- **Spotlight effect** on the matched bag — the rest of the pile dims, a glowing ring pulses around the AI's pick, and a labeled callout (`FOUND HERE` / `POSSIBLY HERE` / `MIGHT BE HERE`) points to it. Confidence-color-coded (green/amber/coral).
 
 ## Self-host
 
