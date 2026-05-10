@@ -56,6 +56,7 @@
     --teal-deep:    #1ee687;
     --blue:         #4f8ef7;
     --amber:        #fbbf24;
+    --amber-deep:   #f59e0b;
     --error:        #f87171;
     --radius:       16px;
     --radius-sm:    10px;
@@ -118,6 +119,17 @@
     z-index: 1;
   }
 
+  /* Airline-stripe top banner — real airline brand stripes are 3-color */
+  .top-stripe {
+    height: 3px;
+    background: linear-gradient(90deg,
+      var(--teal-deep) 0%,
+      var(--teal) 40%,
+      var(--amber) 80%,
+      var(--amber-deep) 100%);
+    box-shadow: 0 0 8px var(--teal-glow);
+  }
+
   /* ================== HEADER ================== */
   header {
     padding: 14px 18px 10px;
@@ -136,8 +148,17 @@
     display: grid; place-items: center;
     box-shadow: 0 6px 20px -4px var(--teal-glow), inset 0 0 0 1px rgba(255,255,255,0.15);
     position: relative;
+    overflow: hidden;
   }
-  .logo svg { width: 18px; height: 18px; color: #06311b; }
+  .logo svg { width: 20px; height: 20px; color: #06311b; transform: rotate(-30deg); }
+  /* Subtle scanline effect on logo to make it feel "screen" / departure-board */
+  .logo::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(0deg, transparent 0 2px, rgba(0,0,0,0.08) 2px 3px);
+    pointer-events: none;
+  }
 
   .brand-text { display: flex; flex-direction: column; line-height: 1; }
   .brand-name {
@@ -234,7 +255,38 @@
   }
 
   /* Hero */
-  .hero { padding: 4px 0 0; position: relative; }
+  .hero {
+    padding: 4px 0 0;
+    position: relative;
+    overflow: visible;
+  }
+  /* Plane silhouette taking off from the hero */
+  .hero-plane {
+    position: absolute;
+    top: -10px;
+    right: -30px;
+    width: 220px;
+    height: 220px;
+    color: var(--teal);
+    opacity: 0.08;
+    pointer-events: none;
+    transform: rotate(-15deg);
+    z-index: 0;
+  }
+  .hero-plane svg { width: 100%; height: 100%; }
+  /* Trail dashes behind the plane */
+  .hero-trail {
+    position: absolute;
+    top: 80px;
+    right: 110px;
+    width: 80px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--teal) 50%, transparent);
+    opacity: 0.35;
+    pointer-events: none;
+    transform: rotate(-15deg);
+  }
+  .hero > * { position: relative; z-index: 1; }
   .hero .kicker {
     font-family: var(--font-mono);
     font-size: 10.5px;
@@ -304,7 +356,7 @@
     font-size: 10px;
   }
 
-  /* Luggage-tag-style upload zone */
+  /* Luggage-tag-style upload zone — real baggage tags have a punch hole + ID strip */
   .tag-zone {
     position: relative;
     width: 100%;
@@ -319,13 +371,35 @@
     color: inherit;
     font-family: inherit;
     padding: 0;
-    /* Subtle teal "tag rope hole" punched on left */
-    background-image:
-      radial-gradient(circle 5px at 22px 22px, rgba(11,17,32,1) 99%, transparent 100%);
+  }
+  /* Punch hole at top-left like a real luggage tag */
+  .tag-zone::before {
+    content: "";
+    position: absolute;
+    top: 14px; left: 14px;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--bg);
+    border: 1.5px solid var(--border-strong);
+    z-index: 2;
+    pointer-events: none;
+  }
+  /* Dashed "rip-here" line near the top */
+  .tag-zone::after {
+    content: "";
+    position: absolute;
+    top: 38px; left: 8px; right: 8px;
+    height: 1px;
+    background-image: linear-gradient(90deg, var(--border-strong) 50%, transparent 50%);
+    background-size: 6px 1px;
+    z-index: 2;
+    pointer-events: none;
+    opacity: 0.5;
   }
 
   .tag-zone:active { transform: scale(0.99); }
-  .tag-zone.has-image { border-color: var(--teal); background-image: none; }
+  .tag-zone.has-image { border-color: var(--teal); }
+  .tag-zone.has-image::before, .tag-zone.has-image::after { display: none; }
 
   .tag-placeholder {
     display: flex;
@@ -568,6 +642,37 @@
     letter-spacing: 0.5px;
     margin-top: -2px;
     text-transform: uppercase;
+  }
+
+  /* Runway-marker bottom decoration */
+  .runway {
+    margin-top: 14px;
+    padding: 0 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .runway-line {
+    flex: 1;
+    height: 2px;
+    background-image: repeating-linear-gradient(90deg,
+      var(--text-faint) 0 14px, transparent 14px 22px);
+    opacity: 0.45;
+  }
+  .runway-code {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    color: var(--text-faint);
+    letter-spacing: 1.4px;
+    text-transform: uppercase;
+  }
+  .runway-code .arrow-glyph {
+    color: var(--teal);
+    font-size: 11px;
+    line-height: 1;
   }
 
   /* ================== TOAST ================== */
@@ -1456,12 +1561,13 @@
 <body>
 
 <div class="app">
+  <div class="top-stripe"></div>
   <header>
     <div class="brand">
       <div class="logo">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
-          <circle cx="12" cy="10" r="3"/>
+        <!-- Plane (taking off, banking left) — instant aviation cue -->
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <path d="M21 16v-2l-8-5V3.5C13 2.67 12.33 2 11.5 2S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/>
         </svg>
       </div>
       <div class="brand-text">
@@ -1493,6 +1599,15 @@
     </div>
 
     <div class="hero">
+      <div class="hero-plane" aria-hidden="true">
+        <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+          <!-- Plane silhouette (top-down, banking) -->
+          <path d="M50 8 L52 38 L92 56 L92 62 L52 50 L52 72 L60 80 L60 84 L50 80 L40 84 L40 80 L48 72 L48 50 L8 62 L8 56 L48 38 Z"/>
+          <!-- Vapor trail dashes -->
+          <path d="M50 90 L50 96" stroke-dasharray="2 3" opacity="0.6"/>
+        </svg>
+      </div>
+      <div class="hero-trail"></div>
       <div class="kicker">▲ AI Baggage Tracking</div>
       <h2>Find your bag<br/><span class="glow">on the tarmac.</span></h2>
       <p>Scan it from every angle, snap the pile, and let computer vision pinpoint exactly where yours is sitting.</p>
@@ -1573,6 +1688,14 @@
       Initiate Search
     </button>
     <p class="footer-hint">Powered by xAI Grok · Free with reasonable limits</p>
+
+    <div class="runway" aria-hidden="true">
+      <span class="runway-code">RWY 27L</span>
+      <span class="runway-line"></span>
+      <span class="runway-code"><span class="arrow-glyph">▲</span> DEP</span>
+      <span class="runway-line"></span>
+      <span class="runway-code">GATE B14</span>
+    </div>
   </main>
 </div>
 
