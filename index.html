@@ -252,6 +252,66 @@
     50%      { opacity: 0.45; }
   }
 
+  /* ====== Departure-board strip ====== */
+  .dep-board {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 14px;
+    background: var(--ink);
+    color: #faf6ed;
+    border-radius: 10px;
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    letter-spacing: 0.7px;
+    text-transform: uppercase;
+    overflow: hidden;
+    position: relative;
+    border: 1px solid var(--ink);
+    box-shadow: 0 8px 24px -10px rgba(26,31,46,0.35);
+  }
+  .dep-board::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(0deg, transparent 0 2px, rgba(255,255,255,0.025) 2px 3px);
+    pointer-events: none;
+  }
+  .dep-board .dep-section {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+  .dep-board .dep-label { color: var(--ink-3); font-size: 9px; letter-spacing: 1px; }
+  .dep-board .dep-flight { color: var(--amber); font-weight: 600; }
+  .dep-board .dep-arrow { color: var(--coral); font-weight: 700; padding: 0 2px; }
+  .dep-board .dep-time { color: #faf6ed; font-weight: 600; }
+  .dep-board .dep-status { margin-left: auto; color: #4ade80; font-weight: 700; font-size: 9.5px; }
+  .dep-board .dep-status::before {
+    content: "●";
+    color: #4ade80;
+    margin-right: 4px;
+    animation: pulseDot 2.4s ease-in-out infinite;
+  }
+  .dep-board .dep-divider { color: var(--ink-3); opacity: 0.5; }
+
+  /* ====== Hero illustration (tarmac scene) ====== */
+  .hero-scene {
+    width: 100%;
+    aspect-ratio: 410 / 170;
+    margin: 4px 0 6px;
+    overflow: visible;
+    position: relative;
+  }
+  .hero-scene svg { width: 100%; height: 100%; display: block; overflow: visible; }
+  .hero-scene .plane-trail { animation: planeDrift 16s linear infinite; }
+  @keyframes planeDrift {
+    0%   { transform: translateX(0); opacity: 0.5; }
+    50%  { opacity: 0.65; }
+    100% { transform: translateX(-12px); opacity: 0.5; }
+  }
+
   /* ====== Hero — editorial travel-mag treatment ====== */
   .hero {
     padding: 8px 0 0;
@@ -1554,6 +1614,96 @@
       <span class="ticker" id="sysTicker">— GROK VISION ONLINE</span>
     </div>
 
+    <div class="dep-board" aria-hidden="true">
+      <span class="dep-section">
+        <span class="dep-label">FLT</span>
+        <span class="dep-flight" id="depFlight">DL142</span>
+      </span>
+      <span class="dep-divider">·</span>
+      <span class="dep-section">
+        <span id="depFrom">LAX</span>
+        <span class="dep-arrow">→</span>
+        <span id="depTo">JFK</span>
+      </span>
+      <span class="dep-divider">·</span>
+      <span class="dep-section">
+        <span class="dep-time" id="depTime">14:32</span>
+      </span>
+      <span class="dep-status">ON TIME</span>
+    </div>
+
+    <div class="hero-scene" aria-hidden="true">
+      <svg viewBox="0 0 410 170" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+        <defs>
+          <pattern id="tarmac-stripes" x="0" y="0" width="22" height="3" patternUnits="userSpaceOnUse">
+            <rect width="14" height="2" fill="#cdc4ad" y="0.5"/>
+          </pattern>
+        </defs>
+
+        <!-- Horizon: subtle warmer band for the sky-tarmac transition -->
+        <rect x="0" y="105" width="410" height="65" fill="#f3eee0"/>
+        <rect x="0" y="113" width="410" height="2" fill="url(#tarmac-stripes)" opacity="0.6"/>
+
+        <!-- Distant plane silhouette, banking right -->
+        <g class="plane-trail" transform="translate(320 28) rotate(-12)" stroke="#1a1f2e" stroke-width="1.4" fill="none" opacity="0.55" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M0 0 L2 14 L24 20 L24 24 L2 19 L2 30 L5 34 L5 36 L0 34 L-5 36 L-5 34 L-2 30 L-2 19 L-24 24 L-24 20 L-2 14 Z"/>
+        </g>
+        <!-- Vapor trail dashes -->
+        <line x1="270" y1="42" x2="318" y2="34" stroke="#1a1f2e" stroke-width="1" stroke-dasharray="3 4" opacity="0.35"/>
+        <line x1="252" y1="48" x2="268" y2="44" stroke="#1a1f2e" stroke-width="1" stroke-dasharray="2 3" opacity="0.25"/>
+
+        <!-- Sun / horizon glow disc -->
+        <circle cx="100" cy="92" r="22" fill="#fde4dc" opacity="0.55"/>
+
+        <!-- Foreground: vintage rolling suitcase (left) -->
+        <g transform="translate(28 68)" stroke="#1a1f2e" stroke-width="2.2" fill="#faf6ed" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="0" y="12" width="64" height="68" rx="6"/>
+          <line x1="0" y1="34" x2="64" y2="34"/>
+          <path d="M22 12 Q22 0 32 0 Q42 0 42 12" fill="none"/>
+          <rect x="20" y="8" width="24" height="6" rx="2" fill="#1a1f2e"/>
+          <!-- Latches (amber) -->
+          <rect x="6" y="38" width="8" height="10" rx="1.5" fill="#d68900" stroke-width="1.2"/>
+          <rect x="50" y="38" width="8" height="10" rx="1.5" fill="#d68900" stroke-width="1.2"/>
+          <!-- Travel sticker (coral roundel) -->
+          <g transform="rotate(-12 32 60)">
+            <circle cx="32" cy="60" r="11" fill="#f54b2a" stroke="#1a1f2e" stroke-width="1.4"/>
+            <text x="32" y="63" text-anchor="middle" fill="white" font-family="serif" font-style="italic" font-size="9" font-weight="600">PAR</text>
+          </g>
+          <!-- Wheels -->
+          <rect x="-2" y="80" width="8" height="8" rx="2" fill="#1a1f2e"/>
+          <rect x="58" y="80" width="8" height="8" rx="2" fill="#1a1f2e"/>
+        </g>
+
+        <!-- Foreground: duffel bag (middle-right) -->
+        <g transform="translate(140 100)" stroke="#1a1f2e" stroke-width="2.2" fill="#fde4dc" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M0 12 Q0 0 12 0 L78 0 Q90 0 90 12 L90 38 Q90 50 78 50 L12 50 Q0 50 0 38 Z"/>
+          <!-- Top zipper -->
+          <line x1="14" y1="6" x2="76" y2="6" stroke-width="1.2" stroke-dasharray="3 2"/>
+          <!-- Handles -->
+          <path d="M22 0 Q22 -10 32 -10 L40 -10 Q50 -10 50 0" fill="none"/>
+          <path d="M50 0 Q50 -10 60 -10 L68 -10 Q78 -10 78 0" fill="none" opacity="0.65"/>
+          <!-- Tag -->
+          <line x1="36" y1="-10" x2="36" y2="0" stroke-width="1.2"/>
+          <rect x="32" y="2" width="8" height="11" fill="#f54b2a" stroke-width="1.2"/>
+        </g>
+
+        <!-- Foreground: small carry-on (right) -->
+        <g transform="translate(320 75)" stroke="#1a1f2e" stroke-width="2.2" fill="#faf6ed" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="0" y="12" width="56" height="60" rx="5"/>
+          <line x1="0" y1="30" x2="56" y2="30"/>
+          <path d="M18 12 Q18 2 28 2 Q38 2 38 12" fill="none"/>
+          <rect x="16" y="8" width="24" height="6" rx="2" fill="#1a1f2e"/>
+          <!-- Tag dangling -->
+          <line x1="28" y1="2" x2="28" y2="-4" stroke-width="1.2"/>
+          <rect x="22" y="-12" width="12" height="14" fill="#d68900" stroke-width="1.2"/>
+          <circle cx="28" cy="-9" r="1" fill="#1a1f2e" stroke="none"/>
+          <!-- Wheels -->
+          <rect x="-2" y="72" width="6" height="7" rx="1.5" fill="#1a1f2e"/>
+          <rect x="52" y="72" width="6" height="7" rx="1.5" fill="#1a1f2e"/>
+        </g>
+      </svg>
+    </div>
+
     <div class="hero">
       <div class="hero-rule"></div>
       <div class="kicker">AI Baggage Tracking</div>
@@ -1570,8 +1720,14 @@
       <button class="tag-zone" id="zone1" type="button" aria-label="Scan your bag">
         <div class="tag-placeholder">
           <div class="tag-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M3 12a9 9 0 1 0 9-9"/><polyline points="3 4 3 12 11 12"/>
+            <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <!-- Suitcase -->
+              <rect x="9" y="11" width="14" height="13" rx="1.5"/>
+              <path d="M13 11 L13 8 Q13 7 14 7 L18 7 Q19 7 19 8 L19 11"/>
+              <line x1="9" y1="15" x2="23" y2="15"/>
+              <!-- 360 rotation arc around it -->
+              <path d="M5 16 a11 11 0 1 0 22 0" stroke-dasharray="2.5 2.5" opacity="0.55"/>
+              <polyline points="27 16 27 12 23 12" opacity="0.7"/>
             </svg>
           </div>
           <div>
@@ -1591,9 +1747,13 @@
       <button class="tag-zone" id="zone2" type="button" aria-label="Photograph the luggage pile">
         <div class="tag-placeholder">
           <div class="tag-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-              <circle cx="12" cy="13" r="4"/>
+            <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <!-- Stacked luggage pile -->
+              <rect x="3" y="20" width="11" height="9" rx="1"/>
+              <rect x="11" y="13" width="14" height="8" rx="1"/>
+              <rect x="18" y="6" width="11" height="8" rx="1"/>
+              <line x1="3" y1="23" x2="14" y2="23" opacity="0.5"/>
+              <line x1="11" y1="16" x2="25" y2="16" opacity="0.5"/>
             </svg>
           </div>
           <div>
