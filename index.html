@@ -2596,6 +2596,21 @@ No markdown, no fences, no extra text.`;
     window.addEventListener("load", () => {
       navigator.serviceWorker.register("./sw.js").catch((err) => console.warn("SW registration failed:", err));
     });
+
+    // When a new service worker takes over, reload so the latest shell is shown.
+    let alreadyReloaded = false;
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      if (alreadyReloaded) return;
+      alreadyReloaded = true;
+      window.location.reload();
+    });
+
+    navigator.serviceWorker.addEventListener("message", (e) => {
+      if (e.data?.type === "SW_UPDATED" && !alreadyReloaded) {
+        alreadyReloaded = true;
+        window.location.reload();
+      }
+    });
   }
 
   const isStandalone = () =>
