@@ -1,0 +1,71 @@
+- generic [ref=e2]:
+  - banner [ref=e3]:
+    - generic [ref=e4]:
+      - img [ref=e6]
+      - generic [ref=e11]:
+        - generic [ref=e12]:
+          - text: Spot
+          - emphasis [ref=e13]: My
+          - text: Bag
+        - generic [ref=e14]: Baggage Locator
+    - generic [ref=e15]:
+      - button "Share app" [ref=e16] [cursor=pointer]:
+        - img [ref=e17]
+      - button "API key settings" [ref=e23] [cursor=pointer]:
+        - img [ref=e24]
+  - main [ref=e26]:
+    - generic [ref=e27]:
+      - generic [ref=e29]: SYS
+      - generic [ref=e30]: AWAITING INPUT
+      - generic [ref=e31]: — ADD SCAN + PILE PHOTO
+    - img [ref=e33]:
+      - generic [ref=e49]: PAR
+    - generic [ref=e65]:
+      - generic [ref=e67]: AI Baggage Tracking
+      - heading "Find your bag on the tarmac." [level=2] [ref=e68]:
+        - text: Find your bag
+        - emphasis [ref=e69]: on the tarmac.
+      - paragraph [ref=e70]: Scan it from every angle, snap the pile, and let computer vision pinpoint exactly where yours is sitting.
+    - generic [ref=e71]:
+      - generic [ref=e72]:
+        - generic [ref=e73]:
+          - generic [ref=e74]: REF
+          - generic [ref=e75]: /
+          - generic [ref=e76]: "01"
+        - text: Reference scan
+        - generic [ref=e77]: 4–8 angles
+      - button "Scan your bag" [ref=e78] [cursor=pointer]:
+        - generic:
+          - generic:
+            - img
+          - generic:
+            - generic: Start 360° scan
+            - generic: Walk around your bag
+    - generic [ref=e79]:
+      - generic [ref=e80]:
+        - generic [ref=e81]:
+          - generic [ref=e82]: TAR
+          - generic [ref=e83]: /
+          - generic [ref=e84]: "02"
+        - text: Tarmac pile
+      - button "Photograph the luggage pile" [ref=e85] [cursor=pointer]:
+        - generic:
+          - generic:
+            - img
+          - generic:
+            - generic: Photograph the pile
+            - generic: One wide shot
+    - button "+ Flight info OPTIONAL" [ref=e87] [cursor=pointer]:
+      - generic [ref=e88]: +
+      - generic [ref=e89]: Flight info
+      - generic [ref=e90]: OPTIONAL
+    - button "Initiate Search" [disabled] [ref=e91]:
+      - img [ref=e92]
+      - text: Initiate Search
+    - paragraph [ref=e95]: Powered by xAI Grok · Free with reasonable limits
+    - generic [ref=e96]:
+      - generic [ref=e97]: RWY 27L
+      - generic [ref=e99]:
+        - generic [ref=e100]: ▲
+        - text: DEP
+      - generic [ref=e102]: GATE B14
