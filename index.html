@@ -252,50 +252,6 @@
     50%      { opacity: 0.45; }
   }
 
-  /* ====== Departure-board strip ====== */
-  .dep-board {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 9px 14px;
-    background: var(--ink);
-    color: #faf6ed;
-    border-radius: 10px;
-    font-family: var(--font-mono);
-    font-size: 10.5px;
-    letter-spacing: 0.7px;
-    text-transform: uppercase;
-    overflow: hidden;
-    position: relative;
-    border: 1px solid var(--ink);
-    box-shadow: 0 8px 24px -10px rgba(26,31,46,0.35);
-  }
-  .dep-board::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: repeating-linear-gradient(0deg, transparent 0 2px, rgba(255,255,255,0.025) 2px 3px);
-    pointer-events: none;
-  }
-  .dep-board .dep-section {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    flex-shrink: 0;
-  }
-  .dep-board .dep-label { color: var(--ink-3); font-size: 9px; letter-spacing: 1px; }
-  .dep-board .dep-flight { color: var(--amber); font-weight: 600; }
-  .dep-board .dep-arrow { color: var(--coral); font-weight: 700; padding: 0 2px; }
-  .dep-board .dep-time { color: #faf6ed; font-weight: 600; }
-  .dep-board .dep-status { margin-left: auto; color: #4ade80; font-weight: 700; font-size: 9.5px; }
-  .dep-board .dep-status::before {
-    content: "●";
-    color: #4ade80;
-    margin-right: 4px;
-    animation: pulseDot 2.4s ease-in-out infinite;
-  }
-  .dep-board .dep-divider { color: var(--ink-3); opacity: 0.5; }
-
   /* ====== Hero illustration (tarmac scene) ====== */
   .hero-scene {
     width: 100%;
@@ -1612,24 +1568,6 @@
       <span class="label">SYS</span>
       <span class="value" id="sysStatus">READY</span>
       <span class="ticker" id="sysTicker">— GROK VISION ONLINE</span>
-    </div>
-
-    <div class="dep-board" aria-hidden="true">
-      <span class="dep-section">
-        <span class="dep-label">FLT</span>
-        <span class="dep-flight" id="depFlight">DL142</span>
-      </span>
-      <span class="dep-divider">·</span>
-      <span class="dep-section">
-        <span id="depFrom">LAX</span>
-        <span class="dep-arrow">→</span>
-        <span id="depTo">JFK</span>
-      </span>
-      <span class="dep-divider">·</span>
-      <span class="dep-section">
-        <span class="dep-time" id="depTime">14:32</span>
-      </span>
-      <span class="dep-status">ON TIME</span>
     </div>
 
     <div class="hero-scene" aria-hidden="true">
