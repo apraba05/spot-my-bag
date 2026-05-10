@@ -1,6 +1,6 @@
 // SpotMyBag service worker — network-first for HTML so updates propagate
 // immediately, cache-first for icons/og.
-const CACHE = "spotmybag-v11";
+const CACHE = "spotmybag-v12";
 const SHELL = [
   "./",
   "./index.html",
@@ -10,6 +10,7 @@ const SHELL = [
   "./icon-512-maskable.png",
   "./apple-touch-icon.png",
   "./favicon-32.png",
+  "./favicon.ico",
   "./og.png",
 ];
 
