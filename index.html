@@ -1,0 +1,2455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="theme-color" content="#0b1120" />
+<meta name="description" content="Find your bag in the luggage pile on the tarmac. Scan it from every angle and let AI spot it for you." />
+
+<!-- Open Graph -->
+<meta property="og:type" content="website" />
+<meta property="og:title" content="SpotMyBag" />
+<meta property="og:description" content="Lost in a sea of black suitcases? Scan your bag from every angle and let AI find it on the tarmac." />
+<meta property="og:image" content="./og.png" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="SpotMyBag" />
+<meta name="twitter:description" content="AI luggage finder for your next flight." />
+<meta name="twitter:image" content="./og.png" />
+
+<!-- PWA -->
+<link rel="manifest" href="./manifest.json" />
+<link rel="apple-touch-icon" href="./apple-touch-icon.png" />
+<link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png" />
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png" />
+<meta name="apple-mobile-web-app-title" content="SpotMyBag" />
+<meta name="mobile-web-app-capable" content="yes" />
+
+<!-- Fonts: Inter (display/body) + JetBrains Mono (data/airline codes) -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+<title>SpotMyBag — Baggage Locator</title>
+
+<!-- Vercel Web Analytics -->
+<script defer src="/_vercel/insights/script.js"></script>
+
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    /* Aviation palette: navy runway-at-night + departure-board teal */
+    --bg:           #0b1120;
+    --bg-2:         #0d1b3e;
+    --surface:      #141e35;
+    --surface-2:    #1a2742;
+    --surface-3:    #213056;
+    --border:       rgba(255,255,255,0.08);
+    --border-strong:rgba(255,255,255,0.16);
+    --text:         #ffffff;
+    --text-dim:     #8fa3c8;
+    --text-faint:   #4a5b7e;
+    --teal:         #3fffa2;
+    --teal-glow:    rgba(63,255,162,0.18);
+    --teal-deep:    #1ee687;
+    --blue:         #4f8ef7;
+    --amber:        #fbbf24;
+    --error:        #f87171;
+    --radius:       16px;
+    --radius-sm:    10px;
+    --font-sans:    "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    --font-mono:    "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-feature-settings: "ss01", "cv11";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior: none;
+  }
+
+  body {
+    display: flex;
+    justify-content: center;
+    min-height: 100vh;
+    min-height: 100dvh;
+    padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+    background:
+      radial-gradient(ellipse at 80% -10%, rgba(63,255,162,0.07) 0%, transparent 50%),
+      radial-gradient(ellipse at -10% 100%, rgba(79,142,247,0.05) 0%, transparent 50%),
+      var(--bg);
+  }
+
+  /* Scattered runway-light particles */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background-image:
+      radial-gradient(circle at 12% 18%, rgba(63,255,162,0.7) 0, transparent 1.2px),
+      radial-gradient(circle at 27% 70%, rgba(79,142,247,0.5) 0, transparent 1px),
+      radial-gradient(circle at 48% 28%, rgba(255,255,255,0.3) 0, transparent 0.8px),
+      radial-gradient(circle at 71% 58%, rgba(63,255,162,0.5) 0, transparent 1.1px),
+      radial-gradient(circle at 87% 14%, rgba(255,255,255,0.4) 0, transparent 0.9px),
+      radial-gradient(circle at 92% 84%, rgba(79,142,247,0.6) 0, transparent 1px),
+      radial-gradient(circle at 14% 90%, rgba(63,255,162,0.4) 0, transparent 0.9px),
+      radial-gradient(circle at 56% 92%, rgba(255,255,255,0.25) 0, transparent 0.8px);
+    background-size: 100% 100%;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.9;
+  }
+
+  .app {
+    width: 100%;
+    max-width: 410px;
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ================== HEADER ================== */
+  header {
+    padding: 14px 18px 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .brand { display: flex; align-items: center; gap: 11px; }
+
+  .logo {
+    width: 34px; height: 34px;
+    border-radius: 9px;
+    background: linear-gradient(135deg, var(--teal) 0%, var(--teal-deep) 100%);
+    display: grid; place-items: center;
+    box-shadow: 0 6px 20px -4px var(--teal-glow), inset 0 0 0 1px rgba(255,255,255,0.15);
+    position: relative;
+  }
+  .logo svg { width: 18px; height: 18px; color: #06311b; }
+
+  .brand-text { display: flex; flex-direction: column; line-height: 1; }
+  .brand-name {
+    font-family: var(--font-sans);
+    font-size: 16px; font-weight: 800;
+    letter-spacing: -0.4px;
+  }
+  .brand-tag {
+    font-family: var(--font-mono);
+    font-size: 9.5px; font-weight: 500;
+    color: var(--text-dim);
+    letter-spacing: 1.2px;
+    margin-top: 3px;
+    text-transform: uppercase;
+  }
+
+  .header-actions { display: flex; align-items: center; gap: 6px; }
+
+  .icon-btn {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-dim);
+    display: grid; place-items: center;
+    cursor: pointer;
+    transition: transform 0.15s, color 0.15s, border-color 0.15s;
+  }
+  .icon-btn:active { transform: scale(0.92); }
+  .icon-btn:hover { color: var(--text); border-color: var(--border-strong); }
+  .icon-btn svg { width: 15px; height: 15px; }
+
+  .install-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 7px 12px 7px 10px;
+    border-radius: 999px;
+    background: var(--teal);
+    color: #06311b;
+    border: none;
+    font-family: var(--font-mono);
+    font-size: 10.5px; font-weight: 700;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    text-transform: uppercase;
+    box-shadow: 0 4px 14px -4px var(--teal-glow);
+  }
+  .install-chip:active { transform: scale(0.95); }
+  .install-chip svg { width: 12px; height: 12px; }
+
+  /* ================== MAIN ================== */
+  main {
+    flex: 1;
+    padding: 4px 18px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  /* Departure-board status strip */
+  .status-strip {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    background: linear-gradient(90deg, rgba(20,30,53,0.9), rgba(26,39,66,0.6));
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 0.5px;
+    overflow: hidden;
+  }
+  .status-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--teal);
+    box-shadow: 0 0 12px var(--teal);
+    animation: pulseDot 2.4s ease-in-out infinite;
+    flex-shrink: 0;
+  }
+  .status-strip .label { color: var(--text-faint); }
+  .status-strip .value { color: var(--teal); font-weight: 600; }
+  .status-strip .ticker {
+    margin-left: auto;
+    font-size: 10px;
+    color: var(--text-faint);
+    white-space: nowrap;
+    overflow: hidden;
+  }
+  @keyframes pulseDot {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0.4; }
+  }
+
+  /* Hero */
+  .hero { padding: 4px 0 0; position: relative; }
+  .hero .kicker {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    font-weight: 600;
+    color: var(--teal);
+    letter-spacing: 1.6px;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .hero .kicker::before {
+    content: "";
+    width: 18px; height: 1px;
+    background: var(--teal);
+  }
+  .hero h2 {
+    font-size: 36px;
+    line-height: 0.98;
+    font-weight: 900;
+    letter-spacing: -1.5px;
+    color: var(--text);
+  }
+  .hero h2 .glow {
+    color: var(--teal);
+    text-shadow: 0 0 30px rgba(63,255,162,0.25);
+  }
+  .hero p {
+    margin-top: 14px;
+    color: var(--text-dim);
+    font-size: 14px;
+    line-height: 1.55;
+    letter-spacing: -0.05px;
+    max-width: 320px;
+  }
+
+  /* ================== STEP / LUGGAGE TAG ================== */
+  .step { display: flex; flex-direction: column; gap: 10px; }
+
+  .step-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .step-code {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 8px;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    color: var(--teal);
+    font-weight: 700;
+    background: rgba(63,255,162,0.05);
+  }
+  .step-code .slash { color: var(--text-faint); }
+  .step.done .step-code { border-color: var(--teal); background: rgba(63,255,162,0.12); }
+  .step-meta .helper {
+    margin-left: auto;
+    color: var(--text-faint);
+    font-size: 10px;
+  }
+
+  /* Luggage-tag-style upload zone */
+  .tag-zone {
+    position: relative;
+    width: 100%;
+    border-radius: 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    aspect-ratio: 16/10;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.15s, border-color 0.2s;
+    display: grid; place-items: center;
+    color: inherit;
+    font-family: inherit;
+    padding: 0;
+    /* Subtle teal "tag rope hole" punched on left */
+    background-image:
+      radial-gradient(circle 5px at 22px 22px, rgba(11,17,32,1) 99%, transparent 100%);
+  }
+
+  .tag-zone:active { transform: scale(0.99); }
+  .tag-zone.has-image { border-color: var(--teal); background-image: none; }
+
+  .tag-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    color: var(--text-dim);
+    pointer-events: none;
+    padding: 16px;
+    text-align: center;
+  }
+  .tag-icon {
+    width: 50px; height: 50px;
+    border-radius: 50%;
+    background: rgba(63,255,162,0.08);
+    border: 1px solid rgba(63,255,162,0.2);
+    display: grid; place-items: center;
+  }
+  .tag-icon svg { width: 22px; height: 22px; color: var(--teal); }
+  .tag-placeholder .ph-title { font-size: 14px; font-weight: 600; color: var(--text); letter-spacing: -0.2px; }
+  .tag-placeholder .ph-sub {
+    font-size: 11px; color: var(--text-dim);
+    font-family: var(--font-mono);
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+  }
+
+  /* Scan grid (after capture) */
+  .scan-grid-wrap {
+    width: 100%;
+    border-radius: 14px;
+    background: var(--surface);
+    border: 1px solid var(--teal);
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 0 20px -8px var(--teal-glow);
+  }
+  .scan-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--bg);
+    padding: 1px;
+  }
+  .scan-grid img {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    background: #111;
+  }
+  .scan-grid-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    color: var(--text-dim);
+    letter-spacing: 0.4px;
+  }
+  .scan-grid-bar .meta { display: flex; align-items: center; gap: 8px; }
+  .scan-grid-bar strong { color: var(--teal); font-weight: 700; }
+  .scan-grid-bar .actions { display: flex; gap: 6px; }
+  .pill-btn {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.4px;
+    cursor: pointer;
+    text-transform: uppercase;
+  }
+  .pill-btn:active { transform: scale(0.95); }
+  .pill-btn.danger { color: var(--error); border-color: rgba(248,113,113,0.3); }
+
+  /* Pile preview */
+  .tag-zone img.preview-img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .upload-overlay {
+    position: absolute;
+    inset: auto 0 0 0;
+    padding: 10px 14px;
+    background: linear-gradient(to top, rgba(0,0,0,0.85), transparent);
+    color: white;
+    font-size: 11px;
+    font-family: var(--font-mono);
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .retake {
+    background: rgba(255,255,255,0.12);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.18);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    letter-spacing: 0.4px;
+  }
+
+  .file-input { display: none; }
+
+  /* ================== FLIGHT INFO (collapsible) ================== */
+  .flight-card {
+    border-radius: 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .flight-card.has-data { border-color: rgba(63,255,162,0.3); }
+  .flight-toggle {
+    width: 100%;
+    background: none;
+    border: none;
+    color: var(--text);
+    font-family: var(--font-sans);
+    text-align: left;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+  }
+  .flight-toggle .plus {
+    width: 24px; height: 24px;
+    border-radius: 6px;
+    background: rgba(63,255,162,0.1);
+    color: var(--teal);
+    display: grid; place-items: center;
+    font-size: 16px;
+    font-weight: 600;
+    transition: transform 0.25s;
+  }
+  .flight-card.open .flight-toggle .plus { transform: rotate(45deg); }
+  .flight-toggle .ttl {
+    font-size: 13px; font-weight: 600; letter-spacing: -0.1px;
+  }
+  .flight-toggle .sub {
+    margin-left: auto;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-faint);
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+  }
+  .flight-card.has-data .flight-toggle .sub { color: var(--teal); }
+  .flight-body {
+    display: none;
+    padding: 4px 14px 16px;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .flight-card.open .flight-body { display: flex; }
+
+  .flight-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 90px;
+    gap: 8px;
+  }
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .field label {
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    color: var(--text-faint);
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+  }
+  .field input {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 11px;
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+    outline: none;
+    text-transform: uppercase;
+  }
+  .field input::placeholder { color: var(--text-faint); text-transform: none; letter-spacing: 0; }
+  .field input:focus { border-color: var(--teal); }
+
+  /* ================== FIND BUTTON ================== */
+  .find-btn {
+    margin-top: 4px;
+    width: 100%;
+    padding: 18px;
+    border-radius: 14px;
+    border: none;
+    background: linear-gradient(180deg, var(--teal) 0%, var(--teal-deep) 100%);
+    color: #06311b;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: transform 0.15s, opacity 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    box-shadow: 0 12px 28px -10px var(--teal-glow), inset 0 1px 0 rgba(255,255,255,0.4);
+  }
+  .find-btn:active:not(:disabled) { transform: scale(0.98); }
+  .find-btn:disabled {
+    background: var(--surface-2);
+    color: var(--text-faint);
+    box-shadow: none;
+    cursor: not-allowed;
+  }
+  .find-btn svg { width: 16px; height: 16px; }
+
+  .footer-hint {
+    text-align: center;
+    color: var(--text-faint);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.5px;
+    margin-top: -2px;
+    text-transform: uppercase;
+  }
+
+  /* ================== TOAST ================== */
+  .error-toast {
+    position: fixed;
+    top: calc(env(safe-area-inset-top) + 12px);
+    left: 50%;
+    transform: translateX(-50%) translateY(-130%);
+    background: var(--error);
+    color: white;
+    padding: 12px 18px;
+    border-radius: 10px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+    z-index: 300;
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: 0 14px 32px rgba(248,113,113,0.4);
+    max-width: 360px;
+    text-align: center;
+  }
+  .error-toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* ================== LOADING (radar sweep) ================== */
+  .loading-screen {
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse at center, rgba(63,255,162,0.08) 0%, transparent 60%),
+      var(--bg);
+    z-index: 50;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 32px;
+    padding: 40px;
+  }
+  .loading-screen.show { display: flex; }
+
+  .radar {
+    position: relative;
+    width: 160px; height: 160px;
+    border-radius: 50%;
+    background:
+      radial-gradient(circle at center, transparent 30%, rgba(63,255,162,0.04) 31%, transparent 32%),
+      radial-gradient(circle at center, transparent 60%, rgba(63,255,162,0.04) 61%, transparent 62%),
+      radial-gradient(circle at center, transparent 90%, rgba(63,255,162,0.04) 91%, transparent 92%);
+    border: 1px solid rgba(63,255,162,0.2);
+    box-shadow: inset 0 0 60px rgba(63,255,162,0.06), 0 0 60px rgba(63,255,162,0.08);
+    overflow: hidden;
+  }
+  .radar::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 50%;
+    width: 50%; height: 100%;
+    background: linear-gradient(90deg, transparent 0%, rgba(63,255,162,0.4) 100%);
+    transform-origin: left center;
+    animation: sweep 2.4s linear infinite;
+    filter: blur(2px);
+  }
+  .radar::after {
+    content: "";
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 12px; height: 12px;
+    margin: -6px;
+    border-radius: 50%;
+    background: var(--teal);
+    box-shadow: 0 0 20px var(--teal);
+  }
+  .radar .crosshair {
+    position: absolute;
+    inset: 0;
+  }
+  .radar .crosshair::before, .radar .crosshair::after {
+    content: "";
+    position: absolute;
+    background: rgba(63,255,162,0.15);
+  }
+  .radar .crosshair::before {
+    top: 50%; left: 0; right: 0; height: 1px;
+  }
+  .radar .crosshair::after {
+    left: 50%; top: 0; bottom: 0; width: 1px;
+  }
+  @keyframes sweep {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+  }
+
+  .loading-text { text-align: center; max-width: 300px; }
+  .loading-text h3 {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--teal);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+  .loading-text p {
+    color: var(--text-dim);
+    font-size: 14px;
+    line-height: 1.4;
+    min-height: 20px;
+    transition: opacity 0.3s;
+  }
+
+  /* ================== RESULT (BOARDING PASS) ================== */
+  .result-screen {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    z-index: 40;
+    display: none;
+    flex-direction: column;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+  }
+  .result-screen.show { display: flex; }
+
+  .result-inner {
+    width: 100%;
+    max-width: 410px;
+    margin: 0 auto;
+    padding: 14px 18px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .result-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 0 6px;
+  }
+  .back-btn {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    display: grid; place-items: center;
+    cursor: pointer;
+  }
+  .back-btn:active { transform: scale(0.94); }
+  .back-btn svg { width: 16px; height: 16px; }
+  .result-title {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+
+  /* Boarding pass card */
+  .pass {
+    --notch: 14px;
+    background: linear-gradient(180deg, #ffffff 0%, #f6f7fa 100%);
+    color: #0b1120;
+    border-radius: 18px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 24px 60px -20px rgba(0,0,0,0.5);
+    /* Perforated edge mid-card */
+    --pass-mask:
+      radial-gradient(circle var(--notch) at left center, transparent 98%, #000 100%),
+      radial-gradient(circle var(--notch) at right center, transparent 98%, #000 100%),
+      linear-gradient(#000, #000);
+    -webkit-mask-image:
+      radial-gradient(circle var(--notch) at 0% var(--perf-y, 70%), transparent 98%, #000 100%),
+      radial-gradient(circle var(--notch) at 100% var(--perf-y, 70%), transparent 98%, #000 100%);
+    -webkit-mask-composite: source-in;
+            mask-composite: intersect;
+  }
+
+  .pass-header {
+    background: linear-gradient(90deg, var(--teal-deep) 0%, var(--teal) 100%);
+    color: #06311b;
+    padding: 12px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.4px;
+    text-transform: uppercase;
+  }
+  .pass-header .pass-brand {
+    display: flex; align-items: center; gap: 8px;
+  }
+  .pass-header .pass-brand svg { width: 13px; height: 13px; }
+  .pass-status {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: rgba(11,17,32,0.18);
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+  }
+  .pass-status.high   { background: rgba(11,17,32,0.22); }
+  .pass-status.medium { background: rgba(255,255,255,0.32); color: #5a3c00; }
+  .pass-status.low    { background: rgba(248,113,113,0.85); color: white; }
+
+  .pass-body { padding: 18px 18px 4px; display: flex; flex-direction: column; gap: 14px; }
+
+  .pass-route {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 14px;
+  }
+  .pass-route .col { display: flex; flex-direction: column; gap: 4px; }
+  .pass-route .col.right { text-align: right; align-items: flex-end; }
+  .pass-route .label {
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    color: #6b7384;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+  }
+  .pass-route .code {
+    font-family: var(--font-mono);
+    font-size: 32px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.5px;
+    color: #0b1120;
+  }
+  .pass-route .desc {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: #6b7384;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+  }
+  .pass-route .arrow {
+    width: 36px;
+    height: 1px;
+    background: #d2d6dd;
+    position: relative;
+  }
+  .pass-route .arrow::after {
+    content: "";
+    position: absolute;
+    right: -1px; top: 50%;
+    width: 7px; height: 7px;
+    border-top: 1px solid #d2d6dd;
+    border-right: 1px solid #d2d6dd;
+    transform: translateY(-50%) rotate(45deg);
+  }
+  .pass-route .arrow svg {
+    position: absolute;
+    top: -10px; left: 50%;
+    transform: translateX(-50%);
+    width: 16px; height: 16px;
+    color: var(--teal-deep);
+  }
+
+  /* Annotated pile image with targeting reticle */
+  .annotated {
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #000;
+    aspect-ratio: 16/10;
+  }
+  .annotated img {
+    width: 100%; height: 100%; object-fit: cover; display: block;
+  }
+  .annotated .reticle {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+  .reticle-rect {
+    fill: none;
+    stroke: var(--teal);
+    stroke-width: 2;
+    filter: drop-shadow(0 0 6px var(--teal));
+  }
+  .reticle-corner { stroke: var(--teal); stroke-width: 2.5; fill: none; filter: drop-shadow(0 0 4px var(--teal)); }
+  .reticle-pulse {
+    fill: rgba(63,255,162,0.2);
+    animation: reticlePulse 2s ease-in-out infinite;
+  }
+  @keyframes reticlePulse {
+    0%, 100% { opacity: 0.2; }
+    50%      { opacity: 0.55; }
+  }
+  .reticle-label {
+    position: absolute;
+    background: rgba(63,255,162,0.95);
+    color: #06311b;
+    padding: 3px 7px;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    font-weight: 700;
+    letter-spacing: 0.7px;
+    text-transform: uppercase;
+    transform: translateY(-100%);
+  }
+  .annotated.no-bbox .reticle, .annotated.no-bbox .reticle-label { display: none; }
+  .annotated.no-bbox::after {
+    content: "NO LOCATION ESTIMATE";
+    position: absolute;
+    bottom: 8px; left: 50%;
+    transform: translateX(-50%);
+    background: rgba(248,113,113,0.85);
+    color: white;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.7px;
+  }
+
+  .pass-section {
+    border-top: 1px dashed #d2d6dd;
+    padding-top: 12px;
+  }
+  .pass-section h4 {
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    color: #6b7384;
+    letter-spacing: 0.9px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .pass-section p, .pass-section li {
+    color: #1d2233;
+    font-size: 13.5px;
+    line-height: 1.5;
+  }
+  .pass-section ul { padding-left: 16px; display: flex; flex-direction: column; gap: 3px; }
+  .pass-section.location p { font-weight: 700; letter-spacing: -0.1px; }
+
+  .pass-meta-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    padding: 10px 0 0;
+  }
+  .pass-meta {
+    display: flex; flex-direction: column; gap: 3px;
+  }
+  .pass-meta .label {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: #6b7384;
+    letter-spacing: 0.7px;
+    text-transform: uppercase;
+  }
+  .pass-meta .value {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 600;
+    color: #0b1120;
+    letter-spacing: 0.2px;
+  }
+
+  /* Perforated stub */
+  .pass-perf {
+    position: relative;
+    height: 18px;
+    background:
+      repeating-linear-gradient(90deg, #d2d6dd 0 6px, transparent 6px 12px) center / 100% 1px no-repeat;
+    margin: 0 12px;
+  }
+  .pass-perf::before, .pass-perf::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: var(--bg);
+  }
+  .pass-perf::before { left: -22px; }
+  .pass-perf::after  { right: -22px; }
+
+  .pass-stub {
+    padding: 14px 18px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .pass-stub .stub-meta {
+    display: flex; flex-direction: column; gap: 2px;
+  }
+  .pass-stub .stub-meta .label {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: #6b7384;
+    letter-spacing: 0.7px;
+    text-transform: uppercase;
+  }
+  .pass-stub .stub-meta .value {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 700;
+    color: #0b1120;
+  }
+  .pass-stub .barcode {
+    flex: 1;
+    height: 38px;
+    background: repeating-linear-gradient(90deg,
+      #0b1120 0 1px, transparent 1px 3px,
+      #0b1120 3px 5px, transparent 5px 6px,
+      #0b1120 6px 8px, transparent 8px 11px);
+    margin: 0 8px;
+    align-self: center;
+  }
+
+  /* Reference grid (small) */
+  .ref-thumbs {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
+    margin-top: 6px;
+  }
+  .ref-thumbs img {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    border-radius: 5px;
+    background: #111;
+  }
+
+  .result-actions {
+    display: flex;
+    gap: 10px;
+  }
+  .btn-secondary {
+    flex: 1;
+    padding: 14px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+  }
+  .btn-secondary:active { transform: scale(0.98); }
+  .btn-secondary svg { width: 13px; height: 13px; }
+  .btn-secondary.primary {
+    background: var(--teal);
+    color: #06311b;
+    border-color: var(--teal);
+  }
+
+  /* ================== KEY MODAL ================== */
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(11,17,32,0.78);
+    backdrop-filter: blur(12px);
+    z-index: 200;
+    display: none;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .modal-backdrop.show { display: flex; }
+  .modal {
+    width: 100%;
+    max-width: 410px;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    border-radius: 22px 22px 0 0;
+    padding: 24px 22px calc(22px + env(safe-area-inset-bottom));
+    animation: slideUp 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  @keyframes slideUp {
+    from { transform: translateY(100%); }
+    to   { transform: translateY(0); }
+  }
+  .modal h3 {
+    font-size: 18px; font-weight: 700; margin-bottom: 6px; letter-spacing: -0.4px;
+  }
+  .modal p {
+    color: var(--text-dim);
+    font-size: 13px;
+    line-height: 1.5;
+    margin-bottom: 16px;
+  }
+  .modal a { color: var(--teal); text-decoration: none; font-weight: 600; }
+  .modal input {
+    width: 100%;
+    padding: 13px 14px;
+    border-radius: 10px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-size: 13px;
+    font-family: var(--font-mono);
+    margin-bottom: 12px;
+    outline: none;
+  }
+  .modal input:focus { border-color: var(--teal); }
+  .modal-actions { display: flex; gap: 10px; }
+  .modal-actions button {
+    flex: 1;
+    padding: 13px;
+    border-radius: 10px;
+    border: none;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+  .modal-cancel { background: var(--surface-2); color: var(--text); }
+  .modal-save { background: var(--teal); color: #06311b; }
+
+  /* ================== CAMERA ================== */
+  .cam {
+    position: fixed; inset: 0;
+    background: #000;
+    z-index: 250;
+    display: none;
+    flex-direction: column;
+  }
+  .cam.show { display: flex; }
+  .cam-stage {
+    position: relative;
+    flex: 1;
+    overflow: hidden;
+    background: #000;
+  }
+  .cam-stage video, .cam-stage img {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    object-fit: cover;
+    background: #000;
+  }
+  .cam-stage video.flipped { transform: scaleX(-1); }
+  .cam-flash {
+    position: absolute; inset: 0;
+    background: white;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.18s ease-out;
+    z-index: 5;
+  }
+  .cam-flash.fire { opacity: 0.9; transition: opacity 0s; }
+  .cam-grant {
+    position: absolute; inset: 0;
+    display: grid; place-items: center;
+    color: var(--text-dim);
+    text-align: center;
+    padding: 24px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.5;
+    z-index: 4;
+  }
+
+  .cam-top {
+    position: absolute;
+    top: env(safe-area-inset-top);
+    left: 0; right: 0;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 10;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.6), transparent);
+  }
+
+  .cam-icon-btn {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    background: rgba(11,17,32,0.6);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.12);
+    color: white;
+    display: grid; place-items: center;
+    cursor: pointer;
+  }
+  .cam-icon-btn:active { transform: scale(0.92); }
+  .cam-icon-btn svg { width: 16px; height: 16px; }
+
+  .cam-title {
+    color: white;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    background: rgba(11,17,32,0.6);
+    backdrop-filter: blur(10px);
+    padding: 8px 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.12);
+  }
+
+  .cam-hint {
+    position: absolute;
+    top: calc(env(safe-area-inset-top) + 64px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(11,17,32,0.6);
+    backdrop-filter: blur(10px);
+    color: white;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.4px;
+    padding: 7px 13px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.1);
+    z-index: 9;
+    max-width: 88%;
+    text-align: center;
+    text-transform: uppercase;
+  }
+
+  .cam-progress {
+    position: absolute;
+    bottom: calc(env(safe-area-inset-bottom) + 130px);
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 6px;
+    z-index: 9;
+    background: rgba(11,17,32,0.6);
+    backdrop-filter: blur(10px);
+    padding: 8px 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+  .cam-progress .dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.3);
+    transition: background 0.2s, transform 0.2s;
+  }
+  .cam-progress .dot.filled { background: var(--teal); transform: scale(1.2); box-shadow: 0 0 6px var(--teal); }
+  .cam-progress .label {
+    color: white;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 600;
+    margin-left: 6px;
+    align-self: center;
+    letter-spacing: 0.5px;
+  }
+
+  .cam-strip {
+    position: absolute;
+    bottom: calc(env(safe-area-inset-bottom) + 130px);
+    left: 0; right: 0;
+    display: flex;
+    gap: 6px;
+    padding: 0 14px;
+    overflow-x: auto;
+    z-index: 9;
+    -webkit-overflow-scrolling: touch;
+  }
+  .cam-strip img {
+    width: 52px; height: 52px;
+    border-radius: 8px;
+    object-fit: cover;
+    border: 2px solid var(--teal);
+    flex-shrink: 0;
+  }
+
+  .cam-bottom {
+    position: relative;
+    padding: 16px 24px calc(22px + env(safe-area-inset-bottom));
+    background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    z-index: 10;
+  }
+
+  .cam-text-btn {
+    background: none;
+    border: none;
+    color: white;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.7px;
+    text-transform: uppercase;
+    cursor: pointer;
+    padding: 10px;
+    text-align: center;
+    opacity: 0.85;
+  }
+  .cam-text-btn:active { transform: scale(0.95); }
+  .cam-text-btn[hidden] { display: none; }
+  .cam-text-btn.left { text-align: left; }
+  .cam-text-btn.right { text-align: right; color: var(--teal); opacity: 1; }
+
+  .cam-shutter {
+    width: 74px; height: 74px;
+    border-radius: 50%;
+    background: white;
+    border: 4px solid rgba(255,255,255,0.35);
+    background-clip: padding-box;
+    cursor: pointer;
+    box-shadow: 0 0 0 2.5px rgba(255,255,255,0.5) inset;
+    transition: transform 0.1s;
+    justify-self: center;
+  }
+  .cam-shutter:active { transform: scale(0.92); }
+
+  .cam-action-pill {
+    padding: 11px 18px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.18);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: white;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.7px;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+  .cam-action-pill.primary { background: var(--teal); color: #06311b; border-color: var(--teal); }
+  .cam-action-pill:active { transform: scale(0.96); }
+
+  button:focus-visible, a:focus-visible, input:focus-visible {
+    outline: 2px solid var(--teal);
+    outline-offset: 2px;
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header>
+    <div class="brand">
+      <div class="logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+          <circle cx="12" cy="10" r="3"/>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <span class="brand-name">SpotMyBag</span>
+        <span class="brand-tag">Baggage Locator</span>
+      </div>
+    </div>
+    <div class="header-actions" id="headerActions">
+      <button class="icon-btn" id="shareAppBtn" aria-label="Share app">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+          <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+        </svg>
+      </button>
+      <button class="icon-btn" id="keyBtn" aria-label="API key settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <div class="status-strip">
+      <span class="status-dot"></span>
+      <span class="label">SYS</span>
+      <span class="value" id="sysStatus">READY</span>
+      <span class="ticker" id="sysTicker">— GROK VISION ONLINE</span>
+    </div>
+
+    <div class="hero">
+      <div class="kicker">▲ AI Baggage Tracking</div>
+      <h2>Find your bag<br/><span class="glow">on the tarmac.</span></h2>
+      <p>Scan it from every angle, snap the pile, and let computer vision pinpoint exactly where yours is sitting.</p>
+    </div>
+
+    <div class="step" id="step1">
+      <div class="step-meta">
+        <span class="step-code"><span>REF</span><span class="slash">/</span><span>01</span></span>
+        Reference scan
+        <span class="helper" id="step1Helper">4–8 angles</span>
+      </div>
+      <button class="tag-zone" id="zone1" type="button" aria-label="Scan your bag">
+        <div class="tag-placeholder">
+          <div class="tag-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 12a9 9 0 1 0 9-9"/><polyline points="3 4 3 12 11 12"/>
+            </svg>
+          </div>
+          <div>
+            <div class="ph-title">Start 360° scan</div>
+            <div class="ph-sub">Walk around your bag</div>
+          </div>
+        </div>
+      </button>
+      <input type="file" accept="image/*" multiple class="file-input" id="file1" />
+    </div>
+
+    <div class="step" id="step2">
+      <div class="step-meta">
+        <span class="step-code"><span>TAR</span><span class="slash">/</span><span>02</span></span>
+        Tarmac pile
+      </div>
+      <button class="tag-zone" id="zone2" type="button" aria-label="Photograph the luggage pile">
+        <div class="tag-placeholder">
+          <div class="tag-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+              <circle cx="12" cy="13" r="4"/>
+            </svg>
+          </div>
+          <div>
+            <div class="ph-title">Photograph the pile</div>
+            <div class="ph-sub">One wide shot</div>
+          </div>
+        </div>
+      </button>
+      <input type="file" accept="image/*" class="file-input" id="file2" />
+    </div>
+
+    <div class="flight-card" id="flightCard">
+      <button type="button" class="flight-toggle" id="flightToggle">
+        <span class="plus">+</span>
+        <span class="ttl">Flight info</span>
+        <span class="sub" id="flightSub">OPTIONAL</span>
+      </button>
+      <div class="flight-body">
+        <div class="flight-row">
+          <div class="field">
+            <label>Airline</label>
+            <input type="text" id="flightAirline" placeholder="Delta" maxlength="60" />
+          </div>
+          <div class="field">
+            <label>Flight #</label>
+            <input type="text" id="flightNo" placeholder="DL 142" maxlength="12" />
+          </div>
+          <div class="field">
+            <label>Arrival</label>
+            <input type="text" id="flightArrival" placeholder="LAX" maxlength="4" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <button class="find-btn" id="findBtn" disabled>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      Initiate Search
+    </button>
+    <p class="footer-hint">Powered by xAI Grok · Free with reasonable limits</p>
+  </main>
+</div>
+
+<div class="error-toast" id="toast"></div>
+
+<!-- Loading -->
+<div class="loading-screen" id="loading">
+  <div class="radar"><div class="crosshair"></div></div>
+  <div class="loading-text">
+    <h3>Scanning Tarmac</h3>
+    <p id="loadingHint">Reading your bag's features…</p>
+  </div>
+</div>
+
+<!-- Result (boarding pass style) -->
+<div class="result-screen" id="result">
+  <div class="result-inner">
+    <div class="result-header">
+      <button class="back-btn" id="backBtn" aria-label="Back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
+        </svg>
+      </button>
+      <span class="result-title">SEARCH RESULT</span>
+      <div style="width: 36px;"></div>
+    </div>
+
+    <div class="pass" id="pass">
+      <div class="pass-header">
+        <span class="pass-brand">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+          </svg>
+          SpotMyBag
+        </span>
+        <span class="pass-status high" id="passStatus">CONFIRMED</span>
+      </div>
+
+      <div class="pass-body">
+        <div class="pass-route">
+          <div class="col">
+            <span class="label">Reference</span>
+            <span class="code">YOU</span>
+            <span class="desc" id="routeFrom">Your bag</span>
+          </div>
+          <div class="arrow">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M2 12h20M12 2l10 10-10 10"/>
+            </svg>
+          </div>
+          <div class="col right">
+            <span class="label">Located in</span>
+            <span class="code" id="routeTo">PILE</span>
+            <span class="desc" id="routeDesc">Tarmac pile</span>
+          </div>
+        </div>
+
+        <div class="annotated" id="annotated">
+          <img id="resultPileImg" alt="The pile" />
+          <svg class="reticle" viewBox="0 0 100 100" preserveAspectRatio="none" id="reticle"></svg>
+          <span class="reticle-label" id="reticleLabel" hidden>YOUR BAG</span>
+        </div>
+
+        <div class="pass-section location">
+          <h4>Location</h4>
+          <p id="resLocation">—</p>
+        </div>
+
+        <div class="pass-section">
+          <h4>Matched features</h4>
+          <ul id="resMatched"></ul>
+        </div>
+
+        <div class="pass-section" id="resNotesSection">
+          <h4>Notes</h4>
+          <p id="resNotes">—</p>
+        </div>
+
+        <div class="pass-section">
+          <h4>Reference scan</h4>
+          <div class="ref-thumbs" id="resultRefThumbs"></div>
+        </div>
+
+        <div class="pass-meta-grid">
+          <div class="pass-meta">
+            <span class="label">Confidence</span>
+            <span class="value" id="metaConfidence">HIGH</span>
+          </div>
+          <div class="pass-meta">
+            <span class="label">Issued</span>
+            <span class="value" id="metaTime">--:--</span>
+          </div>
+          <div class="pass-meta" id="metaFlightWrap" hidden>
+            <span class="label">Flight</span>
+            <span class="value" id="metaFlight">—</span>
+          </div>
+          <div class="pass-meta" id="metaArrivalWrap" hidden>
+            <span class="label">Arrival</span>
+            <span class="value" id="metaArrival">—</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="pass-perf"></div>
+
+      <div class="pass-stub">
+        <div class="stub-meta">
+          <span class="label">REF</span>
+          <span class="value" id="stubRef">SMB-—</span>
+        </div>
+        <div class="barcode" aria-hidden="true"></div>
+        <div class="stub-meta" style="text-align: right;">
+          <span class="label">SEQ</span>
+          <span class="value" id="stubSeq">—</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="result-actions">
+      <button class="btn-secondary" id="againBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/>
+          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+        </svg>
+        New Search
+      </button>
+      <button class="btn-secondary primary" id="shareBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/>
+        </svg>
+        Share
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Key modal -->
+<div class="modal-backdrop" id="keyModal">
+  <div class="modal">
+    <h3>Use your own xAI key (optional)</h3>
+    <p>By default, SpotMyBag uses a shared key with rate limits. Add your own <a href="https://console.x.ai" target="_blank" rel="noopener">xAI key</a> to skip the limit and bill usage to your account. Stored only on this device. Leave blank to use the default.</p>
+    <input type="password" id="keyInput" placeholder="xai-… (optional)" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" />
+    <div class="modal-actions">
+      <button class="modal-cancel" id="keyCancel">Cancel</button>
+      <button class="modal-save" id="keySave">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Camera -->
+<div class="cam" id="cam" aria-hidden="true">
+  <div class="cam-top">
+    <button class="cam-icon-btn" id="camClose" aria-label="Close">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+    <span class="cam-title" id="camTitle">PHOTOGRAPH BAG</span>
+    <button class="cam-icon-btn" id="camFlip" aria-label="Flip camera">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"/><path d="M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+      </svg>
+    </button>
+  </div>
+
+  <div class="cam-stage">
+    <video id="camVideo" autoplay muted playsinline></video>
+    <img id="camPreview" alt="" hidden />
+    <div class="cam-flash" id="camFlash"></div>
+    <div class="cam-grant" id="camGrant" hidden>Tap allow when your browser asks for camera permission.</div>
+  </div>
+
+  <div class="cam-hint" id="camHint">WALK AROUND YOUR BAG · 4+ ANGLES</div>
+  <div class="cam-progress" id="camProgress" hidden></div>
+  <div class="cam-strip" id="camStrip" hidden></div>
+
+  <div class="cam-bottom" id="camBottom">
+    <button class="cam-text-btn left" id="camLibrary">Library</button>
+    <button class="cam-shutter" id="camShutter" aria-label="Capture"></button>
+    <button class="cam-text-btn right" id="camDone" hidden>Done</button>
+  </div>
+
+  <div class="cam-bottom" id="camReviewBottom" hidden>
+    <button class="cam-action-pill" id="camRetake">Retake</button>
+    <span></span>
+    <button class="cam-action-pill primary" id="camUse">Use Photo</button>
+  </div>
+</div>
+
+<script>
+(() => {
+  "use strict";
+
+  const MODEL = "grok-4-fast-non-reasoning";
+  const STORAGE_KEY = "spotmybag.xaiKey";
+  const FLIGHT_KEY = "spotmybag.flight";
+  const MAX_BYTES = 2 * 1024 * 1024;
+  const COMPRESS_MAX_DIM = 1600;
+  const SCAN_MIN = 4;
+  const SCAN_MAX = 8;
+
+  const $ = (id) => document.getElementById(id);
+
+  const state = {
+    bag: [],
+    pile: null,
+    apiKey: localStorage.getItem(STORAGE_KEY) || "",
+    flight: JSON.parse(localStorage.getItem(FLIGHT_KEY) || "null"),
+  };
+
+  // ============== Toast ==============
+  let toastTimer;
+  const showToast = (msg) => {
+    const t = $("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove("show"), 3200);
+  };
+
+  // ============== Status strip ==============
+  const setStatus = (val, ticker = "") => {
+    $("sysStatus").textContent = val;
+    $("sysTicker").textContent = ticker || "— GROK VISION ONLINE";
+  };
+
+  // ============== Key modal ==============
+  const openKeyModal = () => {
+    $("keyInput").value = state.apiKey;
+    $("keyModal").classList.add("show");
+    setTimeout(() => $("keyInput").focus(), 100);
+  };
+  const closeKeyModal = () => $("keyModal").classList.remove("show");
+  $("keyBtn").addEventListener("click", openKeyModal);
+  $("keyCancel").addEventListener("click", closeKeyModal);
+  $("keySave").addEventListener("click", () => {
+    const v = $("keyInput").value.trim();
+    if (v && !v.startsWith("xai-")) { showToast("xAI keys start with \"xai-\"."); return; }
+    state.apiKey = v;
+    if (v) localStorage.setItem(STORAGE_KEY, v); else localStorage.removeItem(STORAGE_KEY);
+    closeKeyModal();
+    if (v) showToast("Key saved.");
+  });
+  $("keyModal").addEventListener("click", (e) => { if (e.target === $("keyModal")) closeKeyModal(); });
+
+  // ============== Image utilities ==============
+  const fileToDataURL = (file) => new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(r.result);
+    r.onerror = reject;
+    r.readAsDataURL(file);
+  });
+
+  const compressDataUrl = (dataUrl) => new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      let { width, height } = img;
+      const scale = Math.min(1, COMPRESS_MAX_DIM / Math.max(width, height));
+      width = Math.round(width * scale);
+      height = Math.round(height * scale);
+      const canvas = document.createElement("canvas");
+      canvas.width = width; canvas.height = height;
+      canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+      resolve({ dataUrl: canvas.toDataURL("image/jpeg", 0.82), mediaType: "image/jpeg" });
+    };
+    img.onerror = reject;
+    img.src = dataUrl;
+  });
+
+  const stripDataUrl = (dataUrl) => dataUrl.slice(dataUrl.indexOf(",") + 1);
+  const ALLOWED = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+
+  const fileToImageRecord = async (file) => {
+    let dataUrl = await fileToDataURL(file);
+    let mediaType = file.type || "image/jpeg";
+    if (file.size > MAX_BYTES || !ALLOWED.includes(mediaType)) {
+      const c = await compressDataUrl(dataUrl);
+      dataUrl = c.dataUrl;
+      mediaType = c.mediaType;
+    }
+    return { dataUrl, base64: stripDataUrl(dataUrl), mediaType };
+  };
+
+  // ============== Render zones ==============
+  const renderBagZone = () => {
+    const zone = $("zone1");
+    const step = $("step1");
+    const helper = $("step1Helper");
+
+    if (state.bag.length === 0) {
+      step.classList.remove("done");
+      helper.textContent = "4–8 angles";
+      zone.outerHTML = `
+        <button class="tag-zone" id="zone1" type="button" aria-label="Scan your bag">
+          <div class="tag-placeholder">
+            <div class="tag-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 12a9 9 0 1 0 9-9"/><polyline points="3 4 3 12 11 12"/>
+              </svg>
+            </div>
+            <div>
+              <div class="ph-title">Start 360° scan</div>
+              <div class="ph-sub">Walk around your bag</div>
+            </div>
+          </div>
+        </button>`;
+      bindBagZoneClick();
+      return;
+    }
+
+    step.classList.add("done");
+    helper.textContent = `${state.bag.length} angle${state.bag.length === 1 ? "" : "s"}`;
+    const grid = state.bag.map((img, i) => `<img src="${img.dataUrl}" alt="Angle ${i + 1}" />`).join("");
+    zone.outerHTML = `
+      <div class="scan-grid-wrap" id="zone1">
+        <div class="scan-grid">${grid}</div>
+        <div class="scan-grid-bar">
+          <div class="meta">REF · <strong>${state.bag.length}</strong> ANGLES CAPTURED</div>
+          <div class="actions">
+            <button class="pill-btn" id="bagAddMore" ${state.bag.length >= SCAN_MAX ? "disabled style='opacity:.4'" : ""}>+ ADD</button>
+            <button class="pill-btn danger" id="bagClear">CLEAR</button>
+          </div>
+        </div>
+      </div>`;
+    $("bagClear").addEventListener("click", (e) => { e.stopPropagation(); state.bag = []; renderBagZone(); updateFindBtn(); });
+    if (state.bag.length < SCAN_MAX) {
+      $("bagAddMore").addEventListener("click", (e) => { e.stopPropagation(); openCamera("bag"); });
+    }
+  };
+
+  const renderPileZone = () => {
+    const zone = $("zone2");
+    const step = $("step2");
+    if (!state.pile) {
+      step.classList.remove("done");
+      zone.outerHTML = `
+        <button class="tag-zone" id="zone2" type="button" aria-label="Photograph the luggage pile">
+          <div class="tag-placeholder">
+            <div class="tag-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                <circle cx="12" cy="13" r="4"/>
+              </svg>
+            </div>
+            <div>
+              <div class="ph-title">Photograph the pile</div>
+              <div class="ph-sub">One wide shot</div>
+            </div>
+          </div>
+        </button>`;
+      bindPileZoneClick();
+      return;
+    }
+    step.classList.add("done");
+    zone.outerHTML = `
+      <button class="tag-zone has-image" id="zone2" type="button">
+        <img class="preview-img" src="${state.pile.dataUrl}" alt="The pile" />
+        <div class="upload-overlay">
+          <span>TAR · TARMAC PILE</span>
+          <button class="retake" type="button" id="pileRetake">Retake</button>
+        </div>
+      </button>`;
+    bindPileZoneClick();
+    $("pileRetake").addEventListener("click", (e) => {
+      e.preventDefault(); e.stopPropagation();
+      state.pile = null; renderPileZone(); updateFindBtn();
+    });
+  };
+
+  const bindBagZoneClick = () => $("zone1").addEventListener("click", () => openCamera("bag"));
+  const bindPileZoneClick = () => $("zone2").addEventListener("click", () => openCamera("pile"));
+
+  const bindFileInputs = () => {
+    $("file1").addEventListener("change", async (e) => {
+      const files = Array.from(e.target.files || []);
+      if (!files.length) return;
+      const remaining = SCAN_MAX - state.bag.length;
+      const toAdd = files.slice(0, remaining);
+      for (const f of toAdd) {
+        if (!f.type.startsWith("image/")) continue;
+        state.bag.push(await fileToImageRecord(f));
+      }
+      e.target.value = "";
+      renderBagZone();
+      updateFindBtn();
+    });
+    $("file2").addEventListener("change", async (e) => {
+      const f = e.target.files && e.target.files[0];
+      if (!f) return;
+      if (!f.type.startsWith("image/")) { showToast("Please pick an image."); return; }
+      state.pile = await fileToImageRecord(f);
+      e.target.value = "";
+      renderPileZone();
+      updateFindBtn();
+    });
+  };
+
+  bindBagZoneClick();
+  bindPileZoneClick();
+  bindFileInputs();
+
+  const updateFindBtn = () => {
+    const ready = state.bag.length >= 1 && state.pile;
+    $("findBtn").disabled = !ready;
+    if (!ready) setStatus("AWAITING INPUT", "— ADD SCAN + PILE PHOTO");
+    else setStatus("READY", "— TAP INITIATE TO LOCATE");
+  };
+
+  // ============== Flight info ==============
+  const flightCard = $("flightCard");
+  const flightToggle = $("flightToggle");
+  const flightSub = $("flightSub");
+
+  flightToggle.addEventListener("click", () => flightCard.classList.toggle("open"));
+
+  const fields = ["flightAirline", "flightNo", "flightArrival"];
+  if (state.flight) {
+    $("flightAirline").value = state.flight.airline || "";
+    $("flightNo").value = state.flight.flightNo || "";
+    $("flightArrival").value = state.flight.arrival || "";
+  }
+  const updateFlightSub = () => {
+    const f = collectFlight();
+    if (f) {
+      flightCard.classList.add("has-data");
+      flightSub.textContent = [f.flightNo, f.arrival].filter(Boolean).join(" → ") || "ADDED";
+    } else {
+      flightCard.classList.remove("has-data");
+      flightSub.textContent = "OPTIONAL";
+    }
+  };
+  const collectFlight = () => {
+    const airline = $("flightAirline").value.trim().slice(0, 60);
+    const flightNo = $("flightNo").value.trim().toUpperCase().slice(0, 12);
+    const arrival = $("flightArrival").value.trim().toUpperCase().slice(0, 4);
+    if (!airline && !flightNo && !arrival) return null;
+    return { airline, flightNo, arrival };
+  };
+  fields.forEach((id) => {
+    $(id).addEventListener("input", () => {
+      state.flight = collectFlight();
+      if (state.flight) localStorage.setItem(FLIGHT_KEY, JSON.stringify(state.flight));
+      else localStorage.removeItem(FLIGHT_KEY);
+      updateFlightSub();
+    });
+  });
+  updateFlightSub();
+
+  // ============== In-app camera ==============
+  let camStream = null;
+  let camFacing = "environment";
+  let camSlot = null;
+  let camMode = "single";
+  let camCapturedDataUrl = null;
+
+  const camEls = {
+    root: () => $("cam"),
+    video: () => $("camVideo"),
+    preview: () => $("camPreview"),
+    flash: () => $("camFlash"),
+    grant: () => $("camGrant"),
+    title: () => $("camTitle"),
+    hint: () => $("camHint"),
+    progress: () => $("camProgress"),
+    strip: () => $("camStrip"),
+    bottom: () => $("camBottom"),
+    reviewBottom: () => $("camReviewBottom"),
+    library: () => $("camLibrary"),
+    shutter: () => $("camShutter"),
+    done: () => $("camDone"),
+  };
+
+  const openCamera = async (slot) => {
+    camSlot = slot;
+    camMode = slot === "bag" ? "scan" : "single";
+    camCapturedDataUrl = null;
+
+    camEls.title().textContent = slot === "bag"
+      ? `REF SCAN · ${state.bag.length}/${SCAN_MAX}`
+      : "TAR PILE";
+    camEls.hint().textContent = slot === "bag"
+      ? "WALK AROUND YOUR BAG · 4+ ANGLES"
+      : "FRAME ENTIRE PILE · ONE WIDE SHOT";
+
+    if (camMode === "scan") {
+      renderProgressDots();
+      camEls.progress().hidden = false;
+      camEls.strip().hidden = state.bag.length === 0;
+      renderStrip();
+      updateDoneVisibility();
+    } else {
+      camEls.progress().hidden = true;
+      camEls.strip().hidden = true;
+      camEls.done().hidden = true;
+    }
+
+    enterLiveMode();
+    camEls.root().classList.add("show");
+    camEls.root().setAttribute("aria-hidden", "false");
+    document.body.style.overflow = "hidden";
+
+    await startStream();
+  };
+
+  const closeCamera = () => {
+    stopStream();
+    camEls.root().classList.remove("show");
+    camEls.root().setAttribute("aria-hidden", "true");
+    document.body.style.overflow = "";
+    camEls.preview().src = "";
+    camCapturedDataUrl = null;
+  };
+
+  const startStream = async () => {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      camEls.grant().hidden = false;
+      camEls.grant().textContent = "CAMERA NOT AVAILABLE — USE LIBRARY";
+      return;
+    }
+    try {
+      stopStream();
+      camEls.grant().hidden = false;
+      camEls.grant().textContent = "STARTING CAMERA…";
+      camStream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: camFacing }, width: { ideal: 1920 }, height: { ideal: 1080 } },
+        audio: false,
+      });
+      const video = camEls.video();
+      video.srcObject = camStream;
+      video.classList.toggle("flipped", camFacing === "user");
+      camEls.grant().hidden = true;
+    } catch (err) {
+      console.warn("Camera failed:", err);
+      camEls.grant().hidden = false;
+      if (err.name === "NotAllowedError" || err.name === "SecurityError") {
+        camEls.grant().textContent = "PERMISSION DENIED — USE LIBRARY";
+      } else if (err.name === "NotFoundError") {
+        camEls.grant().textContent = "NO CAMERA FOUND";
+      } else {
+        camEls.grant().textContent = "CAMERA UNAVAILABLE — USE LIBRARY";
+      }
+    }
+  };
+
+  const stopStream = () => {
+    if (camStream) {
+      camStream.getTracks().forEach(t => t.stop());
+      camStream = null;
+    }
+    const v = camEls.video();
+    if (v) v.srcObject = null;
+  };
+
+  const enterLiveMode = () => {
+    camEls.video().hidden = false;
+    camEls.preview().hidden = true;
+    camEls.bottom().hidden = false;
+    camEls.reviewBottom().hidden = true;
+  };
+
+  const enterReviewMode = () => {
+    camEls.video().hidden = true;
+    camEls.preview().hidden = false;
+    camEls.bottom().hidden = true;
+    camEls.reviewBottom().hidden = false;
+  };
+
+  const flashShutter = () => {
+    const f = camEls.flash();
+    f.classList.add("fire");
+    requestAnimationFrame(() => requestAnimationFrame(() => f.classList.remove("fire")));
+  };
+
+  const captureFrame = () => {
+    const video = camEls.video();
+    if (!video.videoWidth) return null;
+    const canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext("2d");
+    if (camFacing === "user") { ctx.translate(canvas.width, 0); ctx.scale(-1, 1); }
+    ctx.drawImage(video, 0, 0);
+    return canvas.toDataURL("image/jpeg", 0.9);
+  };
+
+  const renderProgressDots = () => {
+    const total = SCAN_MAX;
+    const filled = state.bag.length;
+    const dots = Array.from({ length: total }, (_, i) =>
+      `<span class="dot ${i < filled ? "filled" : ""}"></span>`).join("");
+    camEls.progress().innerHTML = `${dots}<span class="label">${filled}/${total}</span>`;
+  };
+
+  const renderStrip = () => {
+    const strip = camEls.strip();
+    strip.innerHTML = state.bag.map((img, i) => `<img src="${img.dataUrl}" alt="${i + 1}" />`).join("");
+    strip.hidden = state.bag.length === 0;
+  };
+
+  const updateDoneVisibility = () => {
+    camEls.done().hidden = state.bag.length < SCAN_MIN;
+  };
+
+  camEls.shutter().addEventListener("click", async () => {
+    const dataUrl = captureFrame();
+    if (!dataUrl) return;
+    flashShutter();
+
+    if (camMode === "scan") {
+      const c = await compressDataUrl(dataUrl);
+      state.bag.push({ dataUrl: c.dataUrl, base64: stripDataUrl(c.dataUrl), mediaType: c.mediaType });
+      camEls.title().textContent = `REF SCAN · ${state.bag.length}/${SCAN_MAX}`;
+      renderProgressDots();
+      renderStrip();
+      updateDoneVisibility();
+      if (state.bag.length >= SCAN_MAX) {
+        renderBagZone();
+        updateFindBtn();
+        closeCamera();
+        showToast("Got 8 angles — that's plenty.");
+      }
+    } else {
+      camCapturedDataUrl = dataUrl;
+      camEls.preview().src = dataUrl;
+      enterReviewMode();
+    }
+  });
+
+  $("camRetake").addEventListener("click", () => {
+    camCapturedDataUrl = null;
+    camEls.preview().src = "";
+    enterLiveMode();
+  });
+
+  $("camUse").addEventListener("click", async () => {
+    if (!camCapturedDataUrl || camSlot !== "pile") { closeCamera(); return; }
+    const c = await compressDataUrl(camCapturedDataUrl);
+    state.pile = { dataUrl: c.dataUrl, base64: stripDataUrl(c.dataUrl), mediaType: c.mediaType };
+    renderPileZone();
+    updateFindBtn();
+    closeCamera();
+  });
+
+  $("camDone").addEventListener("click", () => {
+    if (state.bag.length < SCAN_MIN) return;
+    renderBagZone();
+    updateFindBtn();
+    closeCamera();
+  });
+
+  $("camLibrary").addEventListener("click", () => {
+    const slot = camSlot;
+    closeCamera();
+    $(slot === "bag" ? "file1" : "file2").click();
+  });
+
+  $("camFlip").addEventListener("click", async () => {
+    camFacing = camFacing === "environment" ? "user" : "environment";
+    await startStream();
+  });
+
+  $("camClose").addEventListener("click", () => {
+    if (camSlot === "bag") { renderBagZone(); updateFindBtn(); }
+    closeCamera();
+  });
+
+  // ============== Loading hints ==============
+  const HINTS = [
+    "Reading your bag's features",
+    "Mapping the tarmac",
+    "Comparing colors and shapes",
+    "Looking for stickers and tags",
+    "Cross-checking handles and zippers",
+    "Locking on target",
+  ];
+  let hintTimer;
+  const startHints = () => {
+    let i = 0;
+    const el = $("loadingHint");
+    el.textContent = HINTS[0];
+    hintTimer = setInterval(() => {
+      i = (i + 1) % HINTS.length;
+      el.style.opacity = "0";
+      setTimeout(() => { el.textContent = HINTS[i]; el.style.opacity = "1"; }, 220);
+    }, 2200);
+  };
+  const stopHints = () => clearInterval(hintTimer);
+
+  // ============== Grok call ==============
+  const SYSTEM_PROMPT = `You are a luggage identification assistant. The first set of images are reference photos of a single user's bag, captured from multiple angles. Treat them as one bag. The final image is a crowd of luggage on a tarmac. Find which bag in the final image is most likely the user's. Estimate its bounding box as integers 0–100 (percent of pile image, origin top-left). If you can't localize, set bbox to null.
+
+Respond ONLY in valid minified JSON: {"location":"<phrase>","matched":["<feature>",...],"confidence":"High|Medium|Low","notes":"<1-2 sentences>","bbox":{"x":<int>,"y":<int>,"w":<int>,"h":<int>}}
+No markdown, no fences, no extra text.`;
+
+  const callGrok = async () => state.apiKey ? callGrokDirect() : callGrokViaProxy();
+
+  const callGrokViaProxy = async () => {
+    const body = {
+      bag: state.bag.map((img) => img.dataUrl),
+      pile: state.pile.dataUrl,
+      flight: state.flight || undefined,
+    };
+    const res = await fetch("/api/spot", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) {
+      let msg = `Request failed (${res.status})`;
+      try { const err = await res.json(); if (err && err.error) msg = err.error; } catch {}
+      throw new Error(msg);
+    }
+    const data = await res.json();
+    const text = (data.text || "").trim();
+    if (!text) throw new Error("Grok returned an empty response.");
+    return parseGrokJson(text);
+  };
+
+  const callGrokDirect = async () => {
+    const flightLine = state.flight
+      ? `\nFlight context: airline=${state.flight.airline || "?"}, flight=${state.flight.flightNo || "?"}, arrival=${state.flight.arrival || "?"}.`
+      : "";
+    const userContent = [
+      { type: "text", text: `Reference set: ${state.bag.length} photo${state.bag.length === 1 ? "" : "s"} of my bag from different angles.${flightLine}` },
+      ...state.bag.map((img) => ({ type: "image_url", image_url: { url: img.dataUrl, detail: "high" } })),
+      { type: "text", text: "Now find my bag in this airport tarmac pile:" },
+      { type: "image_url", image_url: { url: state.pile.dataUrl, detail: "high" } },
+    ];
+
+    const res = await fetch("https://api.x.ai/v1/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${state.apiKey}` },
+      body: JSON.stringify({
+        model: MODEL, max_tokens: 800, temperature: 0.2,
+        messages: [
+          { role: "system", content: SYSTEM_PROMPT },
+          { role: "user", content: userContent },
+        ],
+      }),
+    });
+
+    if (!res.ok) {
+      let msg = `Request failed (${res.status})`;
+      try { const err = await res.json(); if (err?.error) msg = (typeof err.error === "string" ? err.error : err.error.message) || msg; } catch {}
+      throw new Error(msg);
+    }
+    const data = await res.json();
+    const text = (data.choices?.[0]?.message?.content || "").trim();
+    if (!text) throw new Error("Grok returned an empty response.");
+    return parseGrokJson(text);
+  };
+
+  const parseGrokJson = (text) => {
+    try { return normalizeResult(JSON.parse(text)); } catch {}
+    const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (fenced) { try { return normalizeResult(JSON.parse(fenced[1].trim())); } catch {} }
+    const start = text.indexOf("{"); const end = text.lastIndexOf("}");
+    if (start !== -1 && end > start) {
+      try { return normalizeResult(JSON.parse(text.slice(start, end + 1))); } catch {}
+    }
+    return { location: "Unclear — see notes", matched: [], confidence: "Low", notes: text || "Grok returned an unexpected response.", bbox: null };
+  };
+
+  const normalizeResult = (obj) => {
+    const conf = String(obj.confidence || "").trim().toLowerCase();
+    const confidence = conf.startsWith("h") ? "High" : conf.startsWith("m") ? "Medium" : "Low";
+    let matched = obj.matched;
+    if (typeof matched === "string") matched = [matched];
+    if (!Array.isArray(matched)) matched = [];
+    let bbox = null;
+    if (obj.bbox && typeof obj.bbox === "object") {
+      const { x, y, w, h } = obj.bbox;
+      const valid = [x, y, w, h].every(n => typeof n === "number" && n >= 0 && n <= 100);
+      if (valid && w > 0 && h > 0) bbox = { x, y, w, h };
+    }
+    return {
+      location: String(obj.location || "—").trim(),
+      matched: matched.map(s => String(s).trim()).filter(Boolean),
+      confidence,
+      notes: String(obj.notes || "").trim(),
+      bbox,
+    };
+  };
+
+  // ============== Render result (boarding pass) ==============
+  const renderReticle = (bbox) => {
+    const wrap = $("annotated");
+    const svg = $("reticle");
+    const label = $("reticleLabel");
+    if (!bbox) {
+      wrap.classList.add("no-bbox");
+      svg.innerHTML = "";
+      label.hidden = true;
+      return;
+    }
+    wrap.classList.remove("no-bbox");
+    const { x, y, w, h } = bbox;
+    // SVG uses 0-100 coords with non-uniform scale because preserveAspectRatio="none"
+    const cl = 6; // corner length in svg units (~6%)
+    const corners = `
+      <rect class="reticle-pulse" x="${x}" y="${y}" width="${w}" height="${h}" />
+      <rect class="reticle-rect" x="${x}" y="${y}" width="${w}" height="${h}" rx="0.5" />
+      <path class="reticle-corner" d="M ${x} ${y + cl} L ${x} ${y} L ${x + cl} ${y}" />
+      <path class="reticle-corner" d="M ${x + w - cl} ${y} L ${x + w} ${y} L ${x + w} ${y + cl}" />
+      <path class="reticle-corner" d="M ${x + w} ${y + h - cl} L ${x + w} ${y + h} L ${x + w - cl} ${y + h}" />
+      <path class="reticle-corner" d="M ${x + cl} ${y + h} L ${x} ${y + h} L ${x} ${y + h - cl}" />
+    `;
+    svg.innerHTML = corners;
+
+    // Position label above the bbox in container coords (use percent positioning)
+    label.style.left = `${Math.max(2, Math.min(70, x))}%`;
+    label.style.top  = `${Math.max(8, y)}%`;
+    label.hidden = false;
+  };
+
+  const formatTime = (d) => {
+    const hh = String(d.getHours()).padStart(2, "0");
+    const mm = String(d.getMinutes()).padStart(2, "0");
+    return `${hh}:${mm}`;
+  };
+  const formatRef = (d) => {
+    const y = d.getFullYear().toString().slice(2);
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    const seq = Math.floor(Math.random() * 9000) + 1000;
+    return { ref: `SMB-${y}${m}${day}`, seq: String(seq) };
+  };
+
+  const renderResult = (result) => {
+    const now = new Date();
+
+    $("resultPileImg").src = state.pile.dataUrl;
+    renderReticle(result.bbox);
+
+    const refThumbs = $("resultRefThumbs");
+    refThumbs.innerHTML = state.bag.map(b => `<img src="${b.dataUrl}" alt="" />`).join("");
+
+    // Confidence badge
+    const conf = result.confidence;
+    const cls = conf === "High" ? "high" : conf === "Medium" ? "medium" : "low";
+    const statusText = conf === "High" ? "CONFIRMED" : conf === "Medium" ? "PROBABLE" : "UNCERTAIN";
+    const statusEl = $("passStatus");
+    statusEl.className = `pass-status ${cls}`;
+    statusEl.textContent = statusText;
+
+    $("metaConfidence").textContent = conf.toUpperCase();
+    $("metaTime").textContent = formatTime(now);
+
+    // Route arrival code (use flight arrival if present, else "PILE")
+    const arrival = state.flight?.arrival || "";
+    $("routeTo").textContent = arrival || "PILE";
+    $("routeDesc").textContent = arrival ? "Arrival airport" : "Tarmac pile";
+
+    // Flight meta
+    if (state.flight?.flightNo) {
+      $("metaFlightWrap").hidden = false;
+      $("metaFlight").textContent = state.flight.flightNo;
+    } else { $("metaFlightWrap").hidden = true; }
+    if (state.flight?.arrival) {
+      $("metaArrivalWrap").hidden = false;
+      $("metaArrival").textContent = state.flight.arrival;
+    } else { $("metaArrivalWrap").hidden = true; }
+
+    $("resLocation").textContent = result.location || "—";
+
+    const ul = $("resMatched");
+    ul.innerHTML = "";
+    if (result.matched.length === 0) {
+      const li = document.createElement("li");
+      li.textContent = "No specific features identified.";
+      li.style.color = "#6b7384";
+      ul.appendChild(li);
+    } else {
+      result.matched.forEach(m => {
+        const li = document.createElement("li");
+        li.textContent = m;
+        ul.appendChild(li);
+      });
+    }
+
+    if (result.notes) { $("resNotesSection").style.display = ""; $("resNotes").textContent = result.notes; }
+    else { $("resNotesSection").style.display = "none"; }
+
+    const { ref, seq } = formatRef(now);
+    $("stubRef").textContent = ref;
+    $("stubSeq").textContent = seq;
+
+    $("result").classList.add("show");
+    $("loading").classList.remove("show");
+    stopHints();
+    setStatus("READY", "— SEARCH COMPLETE");
+  };
+
+  // ============== Find ==============
+  $("findBtn").addEventListener("click", async () => {
+    if (state.bag.length === 0 || !state.pile) { showToast("Add bag scan and pile photo first."); return; }
+    setStatus("ANALYZING", "— SCANNING TARMAC FOR YOUR BAG");
+    $("loading").classList.add("show");
+    startHints();
+    try {
+      const result = await callGrok();
+      renderResult(result);
+    } catch (err) {
+      $("loading").classList.remove("show");
+      stopHints();
+      setStatus("ERROR", "— " + (err.message || "REQUEST FAILED").slice(0, 40).toUpperCase());
+      showToast(err.message || "Something went wrong.");
+      console.error(err);
+    }
+  });
+
+  $("backBtn").addEventListener("click", () => $("result").classList.remove("show"));
+
+  $("againBtn").addEventListener("click", () => {
+    state.bag = []; state.pile = null;
+    renderBagZone(); renderPileZone();
+    updateFindBtn();
+    $("result").classList.remove("show");
+    window.scrollTo(0, 0);
+  });
+
+  $("shareBtn").addEventListener("click", async () => {
+    const conf = $("metaConfidence").textContent;
+    const loc = $("resLocation").textContent;
+    const matched = Array.from($("resMatched").querySelectorAll("li")).map(li => "• " + li.textContent).join("\n");
+    const notes = $("resNotes").textContent;
+    const text = `SpotMyBag · ${conf} confidence\n\nLocation: ${loc}\n\nMatched:\n${matched}\n\n${notes}`;
+    if (navigator.share) {
+      try { await navigator.share({ title: "SpotMyBag", text }); }
+      catch (e) { if (e.name !== "AbortError") fallbackCopy(text); }
+    } else fallbackCopy(text);
+  });
+
+  $("shareAppBtn").addEventListener("click", async () => {
+    const url = location.href.split("#")[0].split("?")[0];
+    const payload = { title: "SpotMyBag", text: "AI luggage finder — try it on your next flight.", url };
+    if (navigator.share) {
+      try { await navigator.share(payload); } catch (e) { if (e.name !== "AbortError") fallbackCopy(url); }
+    } else fallbackCopy(url);
+  });
+
+  const fallbackCopy = async (text) => {
+    try { await navigator.clipboard.writeText(text); showToast("Copied to clipboard."); }
+    catch { showToast("Sharing not available."); }
+  };
+
+  // ============== PWA ==============
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("./sw.js").catch((err) => console.warn("SW registration failed:", err));
+    });
+  }
+
+  const isStandalone = () =>
+    window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+  let deferredInstall = null;
+  window.addEventListener("beforeinstallprompt", (e) => {
+    e.preventDefault();
+    deferredInstall = e;
+    showInstallChip();
+  });
+
+  const showInstallChip = () => {
+    if (isStandalone() || $("installChip")) return;
+    const chip = document.createElement("button");
+    chip.id = "installChip";
+    chip.className = "install-chip";
+    chip.innerHTML = `
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 3v12"/><polyline points="7 10 12 15 17 10"/><path d="M5 21h14"/>
+      </svg><span>Install</span>`;
+    chip.addEventListener("click", async () => {
+      if (deferredInstall) {
+        deferredInstall.prompt();
+        const { outcome } = await deferredInstall.userChoice;
+        if (outcome === "accepted") chip.remove();
+        deferredInstall = null;
+      } else if (isIOS) showIOSInstallHelp();
+      else showToast("Use your browser menu → Add to Home Screen.");
+    });
+    $("headerActions").insertBefore(chip, $("headerActions").firstChild);
+  };
+
+  const showIOSInstallHelp = () => {
+    const existing = $("iosHelp");
+    if (existing) { existing.classList.add("show"); return; }
+    const el = document.createElement("div");
+    el.id = "iosHelp";
+    el.className = "modal-backdrop show";
+    el.innerHTML = `
+      <div class="modal">
+        <h3>Add to Home Screen</h3>
+        <p>1. Tap the <strong>Share</strong> button in Safari.<br/>
+        2. Scroll down and tap <strong>Add to Home Screen</strong>.<br/>
+        3. Tap <strong>Add</strong>. SpotMyBag launches like a native app.</p>
+        <div class="modal-actions">
+          <button class="modal-save" id="iosHelpClose" style="flex:1;">Got it</button>
+        </div>
+      </div>`;
+    document.body.appendChild(el);
+    el.querySelector("#iosHelpClose").addEventListener("click", () => el.classList.remove("show"));
+    el.addEventListener("click", (e) => { if (e.target === el) el.classList.remove("show"); });
+  };
+
+  if (isIOS && !isStandalone()) setTimeout(showInstallChip, 700);
+  window.addEventListener("appinstalled", () => $("installChip")?.remove());
+
+  // Initial state
+  updateFindBtn();
+})();
+</script>
+
+</body>
+</html>
